@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 512
+    Timeout: 30
+
+Parameters:
+  TelegramSecretToken:
+    Type: String
+    NoEcho: true
+  TelegramBotToken:
+    Type: String
+    NoEcho: true
+  SupabaseUrl:
+    Type: String
+    NoEcho: true
+  SupabaseServiceKey:
+    Type: String
+    NoEcho: true
+
+Resources:
+  BorderBotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handler.lambda_handler
+      Events:
+        TelegramWebhook:
+          Type: Api
+          Properties:
+            Path: /webhook
+            Method: POST
+      Environment:
+        Variables:
+          TELEGRAM_SECRET_TOKEN: !Ref TelegramSecretToken
+          TELEGRAM_BOT_TOKEN:    !Ref TelegramBotToken
+          SUPABASE_URL:          !Ref SupabaseUrl
+          SUPABASE_SERVICE_KEY:  !Ref SupabaseServiceKey
+
+  CheckStaleSessionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: stale_sessions.check_stale_sessions
+      Timeout: 60
+      Events:
+        ScheduledRun:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0/30 * * * ? *)
+            Name: CheckStaleSessions
+            Enabled: true
+      Environment:
+        Variables:
+          TELEGRAM_BOT_TOKEN:   !Ref TelegramBotToken
+          SUPABASE_URL:         !Ref SupabaseUrl
+          SUPABASE_SERVICE_KEY: !Ref SupabaseServiceKey
