@@ -13,8 +13,7 @@ EVICTION_HOURS = 24
 _REMINDER_THRESHOLDS = [
     (2,   55),
     (5,  115),
-    (10, 235),
-    (None, 355),
+    (None, 175),
 ]
 
 
