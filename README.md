@@ -33,7 +33,7 @@ A lightweight, production-ready Telegram bot built to track and crowdsource bord
 
 Supply samconfig.toml:
 
-``
+```toml
 version = 0.1
 
 [default.deploy.parameters]
@@ -53,4 +53,4 @@ parameter_overrides = [
 
 [default.global.parameters]
 region = "aws_region" # like eu-central-1
-``
+```
