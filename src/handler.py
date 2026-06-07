@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, delete_active_session
 
@@ -185,7 +185,7 @@ def handle_crossed(chat_id: int):
         started_at = datetime.fromisoformat(session.data["started_at"])
         duration_seconds = int((now - started_at).total_seconds())
 
-        get_supabase().table("border_crossings").insert({
+        result = get_supabase().table("border_crossings").insert({
             "chat_id":          chat_id,
             "checkpoint_id":    session.data["checkpoint_id"],
             "direction":        session.data["direction"],
@@ -193,6 +193,7 @@ def handle_crossed(chat_id: int):
             "completed_at":     now.isoformat(),
             "duration_seconds": duration_seconds,
         }).execute()
+        crossing_id = result.data[0]["id"]
 
         delete_active_session(chat_id)
         logger.info("handle_crossed | session deleted | chat_id=%s duration_seconds=%s", chat_id, duration_seconds)
@@ -212,12 +213,22 @@ def handle_crossed(chat_id: int):
     send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": (
-            f"Вітаємо з перетином кордону! 🎉\n"
-            f"Час очікування: <b>{duration_str}</b>\n"
-            "Щасливої дороги! 🚗"
+            f"Вітаємо із перетином кордону! 🎉\n"
+            f"Час очікування: <b>{duration_str}</b>\n\n"
+            "Я зафіксував час проходження. Якщо ви насправді пройшли трохи раніше і "
+            "просто пізно згадали про бот, можете скоригувати час для точнішої статистики інших водіїв:"
         ),
         "parse_mode": "HTML",
-        "reply_markup": {"remove_keyboard": True},
+        "reply_markup": {"inline_keyboard": [
+            [
+                {"text": "15 хв тому",    "callback_data": f"adjust_crossing:{crossing_id}:15"},
+                {"text": "30 хв тому",    "callback_data": f"adjust_crossing:{crossing_id}:30"},
+            ],
+            [
+                {"text": "1 година тому",  "callback_data": f"adjust_crossing:{crossing_id}:60"},
+                {"text": "2 години тому", "callback_data": f"adjust_crossing:{crossing_id}:120"},
+            ],
+        ]},
     })
     send_main_menu(chat_id, GREETINGS_PROMPT)
 
@@ -394,6 +405,50 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
     logger.info("handle_direction_selection | IN_QUEUE keyboard sent | chat_id=%s", chat_id)
 
 
+def handle_adjust_crossing(chat_id: int, crossing_id: str, adjust_minutes: int, message_id: int, query_id: str):
+    logger.info("handle_adjust_crossing | chat_id=%s crossing_id=%s adjust_minutes=%s", chat_id, crossing_id, adjust_minutes)
+    try:
+        row = get_supabase().table("border_crossings") \
+            .select("started_at, completed_at") \
+            .eq("id", crossing_id) \
+            .single() \
+            .execute()
+
+        started_at   = datetime.fromisoformat(row.data["started_at"])
+        completed_at = datetime.fromisoformat(row.data["completed_at"]) - timedelta(minutes=adjust_minutes)
+        if completed_at < started_at:
+            return send_telegram_request("answerCallbackQuery", {
+                "callback_query_id": query_id,
+                "text": "⚠️ Невірне коригування. Час проходження не може бути раніше часу початку черги.",
+                "show_alert": True,
+            })
+        duration_seconds = max(0, int((completed_at - started_at).total_seconds()))
+
+        get_supabase().table("border_crossings") \
+            .update({
+                "completed_at":     completed_at.isoformat(),
+                "duration_seconds": duration_seconds,
+            }) \
+            .eq("id", crossing_id) \
+            .execute()
+        logger.info("handle_adjust_crossing | updated | crossing_id=%s new_duration=%s", crossing_id, duration_seconds)
+    except Exception:
+        logger.exception("handle_adjust_crossing | DB update failed | chat_id=%s", chat_id)
+        send_telegram_request("answerCallbackQuery", {
+            "callback_query_id": query_id,
+            "text": "⚠️ Помилка оновлення. Спробуйте ще раз.",
+            "show_alert": True,
+        })
+        return
+
+    send_telegram_request("editMessageText", {
+        "chat_id":    chat_id,
+        "message_id": message_id,
+        "text":       f"✅ Час скориговано на {adjust_minutes} хв раніше. Дякуємо за точні дані! 👍",
+        "reply_markup": {},
+    })
+
+
 def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int):
     logger.info("route_callback_query | chat_id=%s data=%r", chat_id, data)
     _answer_callback_query(query_id)
@@ -412,6 +467,10 @@ def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int
     elif action == "direction" and len(parts) == 3:
         logger.info("Route: callback → direction_selected | chat_id=%s checkpoint=%s direction=%s", chat_id, parts[1], parts[2])
         handle_direction_selection(chat_id, message_id, parts[1], parts[2])
+
+    elif action == "adjust_crossing" and len(parts) == 3:
+        logger.info("Route: callback → adjust_crossing | chat_id=%s crossing_id=%s minutes=%s", chat_id, parts[1], parts[2])
+        handle_adjust_crossing(chat_id, parts[1], int(parts[2]), message_id, query_id)
 
     elif action == "still_waiting" and len(parts) == 2:
         logger.info("Route: callback → still_waiting | chat_id=%s", chat_id)
