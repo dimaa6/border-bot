@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+import random
 from datetime import datetime, timezone, timedelta
 
-from clients import get_supabase, send_telegram_request, delete_active_session
+from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -60,6 +61,18 @@ CMD_CANCEL = "❌ Скасувати"
 CMD_STATS = "📊 Статистика"
 CMD_INFO = "ℹ️ Інформація"
 
+MIN_CROSSING_INTERVAL_MINUTES = 120
+
+STILL_WAITING_RESPONSES = [
+    "Дякую за точність! Завдяки твоїй пильності інші водії зараз бачать реальну картину на кордоні. Тримаємось! 🤝",
+    "Супер, статус оновлено! Дякую, що не забуваєш відмічатися. Залізного терпіння тобі, черга рано чи пізно закінчиться! ☕",
+    "Прийнято! Статус оновлено. Дякую за твою витримку та пунктуальність! 🚗",
+]
+
+ERROR_DB_UPDATE = "⚠️ Помилка оновлення. Спробуйте ще раз."
+ERROR_DB_SAVE = "⚠️ Помилка збереження даних. Спробуйте ще раз."
+ERROR_DB_CANCEL = "⚠️ Помилка скасування. Спробуйте ще раз."
+
 # ---------------------------------------------------------------------------
 # Telegram API wrapper (placeholder)
 # ---------------------------------------------------------------------------
@@ -90,26 +103,6 @@ def get_user_state(chat_id: int) -> str:
 # Shared UI helpers
 # ---------------------------------------------------------------------------
 
-def send_main_menu(chat_id: int, text_prompt: str):
-    logger.info("send_main_menu | chat_id=%s", chat_id)
-    send_telegram_request("sendMessage", {
-        "chat_id": chat_id,
-        "text": text_prompt,
-        "parse_mode": "HTML",
-        "link_preview_options": {
-            "is_disabled": True,
-        },
-        "reply_markup": {
-            "keyboard": [
-                [{"text": CMD_START_CROSSING}],
-                [{"text": CMD_STATS}, {"text": CMD_INFO}],
-            ],
-            "resize_keyboard": True,
-            "one_time_keyboard": False,
-            "is_persistent": True,
-        },
-    })
-
 
 # ---------------------------------------------------------------------------
 # IDLE state handlers
@@ -134,13 +127,27 @@ def handle_idle_input(chat_id: int, text: str):
 
     if text == "/start":
         logger.info("Route: IDLE → /start | chat_id=%s", chat_id)
-        send_main_menu(chat_id, GREETINGS_PROMPT)
+        send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
     elif text == CMD_START_CROSSING:
         logger.info("Route: IDLE → start_crossing | chat_id=%s", chat_id)
+        try:
+            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=MIN_CROSSING_INTERVAL_MINUTES)).isoformat()
+            result = get_supabase().table("border_crossings") \
+                .select("id") \
+                .eq("chat_id", chat_id) \
+                .gt("completed_at", cutoff) \
+                .maybe_single() \
+                .execute()
+            if result.data:
+                logger.info("Route: IDLE → start_crossing blocked | recent crossing found | chat_id=%s", chat_id)
+                send_main_menu(chat_id, "Ви надто часто перетинаєте кордон, відпочиньте з дороги 😊", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+                return
+        except Exception:
+            logger.exception("Route: IDLE → start_crossing | DB check failed | chat_id=%s", chat_id)
         send_country_selection(chat_id)
     elif text == CMD_STATS:
         logger.info("Route: IDLE → stats | chat_id=%s", chat_id)
-        send_main_menu(chat_id, "Статистика збирається спільнотою. Станьте першим, хто зафіксує чергу сьогодні! 🚀")
+        send_main_menu(chat_id, "Статистика збирається спільнотою. Станьте першим, хто зафіксує чергу сьогодні! 🚀", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
     elif text == CMD_INFO:
         logger.info("Route: IDLE → info | chat_id=%s", chat_id)
         send_main_menu(chat_id,
@@ -151,16 +158,19 @@ def handle_idle_input(chat_id: int, text: str):
                 "<a href=\"https://t.me/Ukrainians_border/94\">Актуальні новини на кордоні з Україною</a> — "
                 "Головний чат водіїв щодо пунктів пропуску через держкордон України. "
                 "Тут можна запитати поради в тих, хто зараз у дорозі.\n\n"
+                "<a href=\"https://t.me/evtravelua\">Подорожі на електромобілях</a> — "
+                "Якщо у вас вже є електромобіль або цікавитесь ним, приєднуйтесь до цього чату.\n\n"
                 "<a href=\"https://dpsu.gov.ua/uk\">Держприкордонслужба України</a> — "
                 "Офіційний сайт із загальними правилами перетину.\n\n"
                 "🤖 <b>Як працює цей бот?</b>\n"
                 "Бот працює на принципі взаємодопомоги. Ви фіксуєте свій час початку черги, періодично підтверджуєте присутність, "
                 "а коли проїжджаєте — тиснете «Я проїхав!». Ваші дані миттєво формують реальну статистику для наступних водіїв."
-            )
+            ),
+            CMD_START_CROSSING, CMD_STATS, CMD_INFO
         )
     else:
         logger.info("Route: IDLE → unrecognised input | chat_id=%s text=%r", chat_id, text)
-        send_main_menu(chat_id, "Оберіть дію:")
+        send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +188,7 @@ def handle_crossed(chat_id: int):
 
         if not session.data:
             logger.warning("handle_crossed | no active session found | chat_id=%s", chat_id)
-            send_main_menu(chat_id, GREETINGS_PROMPT)
+            send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
             return
 
         now = datetime.now(timezone.utc)
@@ -202,7 +212,7 @@ def handle_crossed(chat_id: int):
         logger.exception("handle_crossed | DB operation failed | chat_id=%s", chat_id)
         send_telegram_request("sendMessage", {
             "chat_id": chat_id,
-            "text": "⚠️ Помилка збереження даних. Спробуйте ще раз.",
+            "text": ERROR_DB_SAVE,
         })
         return
 
@@ -230,7 +240,7 @@ def handle_crossed(chat_id: int):
             ],
         ]},
     })
-    send_main_menu(chat_id, GREETINGS_PROMPT)
+    send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, message_id: int | None = None):
@@ -245,25 +255,26 @@ def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, mes
         if callback_query_id:
             send_telegram_request("answerCallbackQuery", {
                 "callback_query_id": callback_query_id,
-                "text": "⚠️ Помилка оновлення. Спробуйте ще раз.",
+                "text": ERROR_DB_UPDATE,
                 "show_alert": True,
             })
         else:
             send_telegram_request("sendMessage", {
                 "chat_id": chat_id,
-                "text": "⚠️ Помилка оновлення. Спробуйте ще раз.",
+                "text": ERROR_DB_UPDATE,
             })
         return
 
+    response_text = random.choice(STILL_WAITING_RESPONSES)
     if callback_query_id:
         send_telegram_request("answerCallbackQuery", {
             "callback_query_id": callback_query_id,
-            "text": "✅ Статус оновлено!",
+            "text": response_text,
         })
     else:
         send_telegram_request("sendMessage", {
             "chat_id": chat_id,
-            "text": "✅ Статус оновлено!",
+            "text": response_text,
         })
 
 
@@ -276,10 +287,10 @@ def handle_cancel_queue(chat_id: int):
         logger.exception("handle_cancel_queue | DB delete failed | chat_id=%s", chat_id)
         send_telegram_request("sendMessage", {
             "chat_id": chat_id,
-            "text": "⚠️ Помилка скасування. Спробуйте ще раз.",
+            "text": ERROR_DB_CANCEL,
         })
         return
-    send_main_menu(chat_id, GREETINGS_PROMPT)
+    send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 def handle_active_queue_input(chat_id: int, text: str):
@@ -323,7 +334,7 @@ def handle_inline_cancel(chat_id: int, message_id: int):
         "text": "❌ Введення скасовано.",
         "reply_markup": {},
     })
-    send_main_menu(chat_id, GREETINGS_PROMPT)
+    send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 def handle_country_selected(chat_id: int, country_code: str):
@@ -375,7 +386,7 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
         logger.exception("handle_direction_selection | DB upsert failed | chat_id=%s", chat_id)
         send_telegram_request("sendMessage", {
             "chat_id": chat_id,
-            "text": "⚠️ Помилка збереження даних. Спробуйте ще раз.",
+            "text": ERROR_DB_SAVE,
         })
         return
 
@@ -436,7 +447,7 @@ def handle_adjust_crossing(chat_id: int, crossing_id: str, adjust_minutes: int, 
         logger.exception("handle_adjust_crossing | DB update failed | chat_id=%s", chat_id)
         send_telegram_request("answerCallbackQuery", {
             "callback_query_id": query_id,
-            "text": "⚠️ Помилка оновлення. Спробуйте ще раз.",
+            "text": ERROR_DB_UPDATE,
             "show_alert": True,
         })
         return

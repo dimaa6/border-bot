@@ -44,3 +44,24 @@ def send_telegram_request(method: str, payload: dict) -> dict | None:
     except urllib.error.URLError as e:
         logger.error("send_telegram_request | method=%s URLError %s", method, e.reason)
     return None
+
+
+def send_main_menu(chat_id: int, text_prompt: str, cmd_start_crossing: str, cmd_stats: str, cmd_info: str) -> None:
+    logger.info("send_main_menu | chat_id=%s", chat_id)
+    send_telegram_request("sendMessage", {
+        "chat_id": chat_id,
+        "text": text_prompt,
+        "parse_mode": "HTML",
+        "link_preview_options": {
+            "is_disabled": True,
+        },
+        "reply_markup": {
+            "keyboard": [
+                [{"text": cmd_start_crossing}],
+                [{"text": cmd_stats}, {"text": cmd_info}],
+            ],
+            "resize_keyboard": True,
+            "one_time_keyboard": False,
+            "is_persistent": True,
+        },
+    })
