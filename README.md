@@ -2,6 +2,8 @@
 
 A lightweight, production-ready Telegram bot built to track and crowdsource border crossing wait times using a highly responsive, serverless backend.
 
+[Run bot in Telegram](https://t.me/ua_border_traffic_bot)
+
 ## High-Level Architecture & Tech Stack
 
 **Infrastructure:** AWS SAM (Serverless Application Model) & CloudFormation.
