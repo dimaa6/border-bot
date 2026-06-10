@@ -2,7 +2,8 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
-from handler import COUNTRIES_AND_CHECKPOINTS, CMD_START_CROSSING, CMD_STATS, CMD_INFO
+from checkpoints import COUNTRIES_AND_CHECKPOINTS
+from handler import CMD_START_CROSSING, CMD_STATS, CMD_INFO
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

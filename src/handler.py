@@ -5,31 +5,12 @@ import random
 from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
+from checkpoints import COUNTRIES_AND_CHECKPOINTS
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 EXPECTED_SECRET = os.environ.get("TELEGRAM_SECRET_TOKEN")
-
-# ---------------------------------------------------------------------------
-# Data layer
-# ---------------------------------------------------------------------------
-
-COUNTRIES_AND_CHECKPOINTS = {
-    "PL": {
-        "name": "Польща",
-        "checkpoints": {
-            "PL_KRAKOVETS":     "Краківець",
-            "PL_SHEHYNI":       "Шегині",
-            "PL_RAVA":          "Рава-Руська",
-            "PL_USTYLUH":       "Устилуг",
-            "PL_UHRYNIV":       "Угринів",
-            "PL_HRUSHIV":       "Грушів",
-            "PL_NIZHANKOVICHI": "Нижанковичі",
-            "PL_SMILNYTSIA":    "Смільниця",
-        },
-    },
-}
 
 # ---------------------------------------------------------------------------
 # State constants
@@ -390,10 +371,19 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
         })
         return
 
+    checkpoint_name = None
+    for country in COUNTRIES_AND_CHECKPOINTS.values():
+        if checkpoint_id in country["checkpoints"]:
+            checkpoint_name = country["checkpoints"][checkpoint_id]
+            break
+    
+    direction_text = "🇪🇺 Виїзд з України" if direction == "OUTBOUND" else "🇺🇦 В'їзд в Україну"
+    
     send_telegram_request("editMessageText", {
         "chat_id":    chat_id,
         "message_id": message_id,
-        "text":       "⏱ Сесія розпочата. Удачі вам!",
+        "text":       f"⏱ Сесія розпочата.\n\nПункт пропуску: <b>{checkpoint_name}</b>\nНапрямок: {direction_text}\n\nУдачі вам!",
+        "parse_mode": "HTML",
         "reply_markup": {},
     })
     send_telegram_request("sendMessage", {
