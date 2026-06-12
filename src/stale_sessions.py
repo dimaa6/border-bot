@@ -91,10 +91,16 @@ def check_stale_sessions(event, context):
     now_iso = now.isoformat()
     eviction_cutoff = (now - timedelta(hours=EVICTION_HOURS)).isoformat()
 
+    # Coarse filter: Exclude users who had any activity/reminder within the minimum silence threshold.
+    min_silence_minutes = _REMINDER_THRESHOLDS[0][1]
+    coarse_cutoff = (now - timedelta(minutes=min_silence_minutes)).isoformat()
+
     logger.info("check_stale_sessions | started | now=%s", now_iso)
 
     result = get_supabase().table("active_sessions") \
         .select("chat_id, checkpoint_id, started_at, last_reminded_at, last_user_action_at") \
+        .lt("last_reminded_at", coarse_cutoff) \
+        .lt("last_user_action_at", coarse_cutoff) \
         .execute()
 
     sessions = result.data or []
