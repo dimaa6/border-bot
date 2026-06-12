@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
-from handler import CMD_START_CROSSING, CMD_STATS, CMD_INFO
+from handler import CMD_START_CROSSING, CMD_STATS, CMD_INFO, GREETINGS_PROMPT_SHORT
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -36,9 +36,13 @@ def _expire_session(session: dict) -> None:
     logger.info("check_stale_sessions | expiring session | chat_id=%s", chat_id)
     delete_active_session(chat_id)
     logger.info("check_stale_sessions | session deleted | chat_id=%s", chat_id)
+    send_telegram_request("sendMessage", {
+        "chat_id": chat_id,
+        "text": "Ми не чули від вас довгий час, тому ми видалили вас зі списку очікування. Щасливої дороги🚗",
+    })
     send_main_menu(
         chat_id,
-        "Ми не чули від вас довгий час, тому ми видалили вас зі списку очікування. Щасливої дороги🚗",
+        GREETINGS_PROMPT_SHORT,
         CMD_START_CROSSING,
         CMD_STATS,
         CMD_INFO

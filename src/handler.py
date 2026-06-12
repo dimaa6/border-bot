@@ -22,7 +22,7 @@ STATE_IN_QUEUE = "IN_QUEUE"
 # ---------------------------------------------------------------------------
 # Text command constants
 # ---------------------------------------------------------------------------
-GREETINGS_PROMPT = (
+GREETINGS_PROMPT_INTRO = (
     "<b>Вітаємо!</b>\n\n"
     "Цей бот створено, щоб ми разом могли бачити реальний час очікування у пунктах пропуску та оптимально планувати поїздки.\n\n"
     "📢 <b>Важливе оголошення для перших користувачів:</b>\n"
@@ -32,9 +32,12 @@ GREETINGS_PROMPT = (
     "Коли ви будете під'їжджати до кордону, просто запустіть моніторинг у боті. "
     "Натискайте кнопку \"Все ще стою\", поки чекаєте, і обов'язково натисніть \"Я проїхав!\", коли перетнете лінію.\n\n"
     "Кожна ваша хвилина в черзі перетвориться на корисну статистику для наступних водіїв!\n\n"
+)
+GREETINGS_PROMPT_SHORT = (
     "Натисніть <b>«🚗 Почати перетин»</b> у момент, коли ви "
     "реально встали в чергу, щоб зафіксувати точний час початку очікування."
 )
+GREETINGS_PROMPT = GREETINGS_PROMPT_INTRO + GREETINGS_PROMPT_SHORT
 CMD_START_CROSSING = "🚗 Почати перетин"
 CMD_CROSSED = "✅ Я проїхав!"
 CMD_STILL_WAITING = "⏳ Все ще стою"
@@ -169,7 +172,7 @@ def handle_crossed(chat_id: int):
 
         if not session.data:
             logger.warning("handle_crossed | no active session found | chat_id=%s", chat_id)
-            send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
             return
 
         now = datetime.now(timezone.utc)
@@ -221,7 +224,7 @@ def handle_crossed(chat_id: int):
             ],
         ]},
     })
-    send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, message_id: int | None = None):
@@ -271,7 +274,7 @@ def handle_cancel_queue(chat_id: int):
             "text": ERROR_DB_CANCEL,
         })
         return
-    send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 def handle_active_queue_input(chat_id: int, text: str):
@@ -315,7 +318,7 @@ def handle_inline_cancel(chat_id: int, message_id: int):
         "text": "❌ Введення скасовано.",
         "reply_markup": {},
     })
-    send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 def handle_country_selected(chat_id: int, country_code: str):
