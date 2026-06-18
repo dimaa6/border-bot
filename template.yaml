@@ -20,6 +20,9 @@ Parameters:
   SupabaseServiceKey:
     Type: String
     NoEcho: true
+  AdminUserId:
+    Type: String
+    NoEcho: true
 
 Resources:
   BorderBotFunction:
@@ -39,6 +42,7 @@ Resources:
           TELEGRAM_BOT_TOKEN:    !Ref TelegramBotToken
           SUPABASE_URL:          !Ref SupabaseUrl
           SUPABASE_SERVICE_KEY:  !Ref SupabaseServiceKey
+          ADMIN_USER_ID:         !Ref AdminUserId
 
   CheckStaleSessionsFunction:
     Type: AWS::Serverless::Function

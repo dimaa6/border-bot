@@ -6,6 +6,12 @@ from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
+from manual_stats import (
+    is_admin,
+    handle_addstats_cmd,
+    handle_admin_direction_selected,
+    handle_admin_reply
+)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -92,10 +98,10 @@ def get_user_state(chat_id: int) -> str:
 # IDLE state handlers
 # ---------------------------------------------------------------------------
 
-def send_country_selection(chat_id: int):
-    logger.info("send_country_selection | chat_id=%s", chat_id)
+def send_country_selection(chat_id: int, prefix: str = "country"):
+    logger.info("send_country_selection | chat_id=%s prefix=%s", chat_id, prefix)
     buttons = [
-        [{"text": meta["name"], "callback_data": f"country:{code}"}]
+        [{"text": meta["name"], "callback_data": f"{prefix}:{code}"}]
         for code, meta in COUNTRIES_AND_CHECKPOINTS.items()
     ]
     buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
@@ -129,9 +135,15 @@ def handle_idle_input(chat_id: int, text: str):
         except Exception:
             logger.exception("Route: IDLE → start_crossing | DB check failed | chat_id=%s", chat_id)
         send_country_selection(chat_id)
+    elif text == "/addstats":
+        logger.info("Route: IDLE → /addstats | chat_id=%s", chat_id)
+        if is_admin(chat_id):
+            handle_addstats_cmd(chat_id)
+        else:
+            send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
     elif text == CMD_STATS:
         logger.info("Route: IDLE → stats | chat_id=%s", chat_id)
-        send_main_menu(chat_id, "Статистика збирається спільнотою. Станьте першим, хто зафіксує чергу сьогодні! 🚀", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        send_country_selection(chat_id, prefix="stats_country")
     elif text == CMD_INFO:
         logger.info("Route: IDLE → info | chat_id=%s", chat_id)
         send_main_menu(chat_id,
@@ -321,14 +333,14 @@ def handle_inline_cancel(chat_id: int, message_id: int):
     send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
-def handle_country_selected(chat_id: int, country_code: str):
-    logger.info("handle_country_selected | chat_id=%s country=%s", chat_id, country_code)
+def handle_country_selected(chat_id: int, country_code: str, prefix: str = "checkpoint"):
+    logger.info("handle_country_selected | chat_id=%s country=%s prefix=%s", chat_id, country_code, prefix)
     country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
     if not country:
         logger.warning("handle_country_selected | unknown country_code=%s", country_code)
         return
     buttons = [
-        [{"text": name, "callback_data": f"checkpoint:{country_code}:{cp_id}"}]
+        [{"text": name, "callback_data": f"{prefix}:{country_code}:{cp_id}"}]
         for cp_id, name in country["checkpoints"].items()
     ]
     buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
@@ -339,15 +351,15 @@ def handle_country_selected(chat_id: int, country_code: str):
     })
 
 
-def handle_checkpoint_selected(chat_id: int, country_code: str, checkpoint_id: str):
-    logger.info("handle_checkpoint_selected | chat_id=%s country=%s checkpoint=%s", chat_id, country_code, checkpoint_id)
+def handle_checkpoint_selected(chat_id: int, country_code: str, checkpoint_id: str, prefix: str = "direction"):
+    logger.info("handle_checkpoint_selected | chat_id=%s country=%s checkpoint=%s prefix=%s", chat_id, country_code, checkpoint_id, prefix)
     checkpoint_name = COUNTRIES_AND_CHECKPOINTS.get(country_code, {}).get("checkpoints", {}).get(checkpoint_id, checkpoint_id)
     send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"Оберіть напрямок руху ({checkpoint_name}):",
         "reply_markup": {"inline_keyboard": [
-            [{"text": "🇪🇺 Виїзд з України", "callback_data": f"direction:{checkpoint_id}:OUTBOUND"}],
-            [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": f"direction:{checkpoint_id}:INBOUND"}],
+            [{"text": "🇪🇺 Виїзд з України", "callback_data": f"{prefix}:{checkpoint_id}:OUTBOUND"}],
+            [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": f"{prefix}:{checkpoint_id}:INBOUND"}],
             [{"text": CMD_CANCEL,              "callback_data": "cancel:flow"}],
         ]},
     })
@@ -453,6 +465,115 @@ def handle_adjust_crossing(chat_id: int, crossing_id: str, adjust_minutes: int, 
     })
 
 
+def handle_stats_country_selected(chat_id: int, country_code: str):
+    logger.info("handle_stats_country_selected | chat_id=%s country=%s", chat_id, country_code)
+    country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
+    if not country:
+        return
+    send_telegram_request("sendMessage", {
+        "chat_id": chat_id,
+        "text": f"📊 Статистика ({country['name']})\nОберіть напрямок:",
+        "reply_markup": {"inline_keyboard": [
+            [{"text": "🇪🇺 Виїзд з України", "callback_data": f"stats_dir:{country_code}:OUTBOUND"}],
+            [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": f"stats_dir:{country_code}:INBOUND"}],
+            [{"text": CMD_CANCEL,              "callback_data": "cancel:flow"}],
+        ]},
+    })
+
+
+def handle_stats_direction_selected(chat_id: int, message_id: int, country_code: str, direction: str):
+    logger.info("handle_stats_direction_selected | chat_id=%s country=%s dir=%s", chat_id, country_code, direction)
+    country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
+    if not country:
+        return
+
+    send_telegram_request("editMessageText", {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": "⏳ Збираємо останні дані...",
+        "reply_markup": {}
+    })
+
+    checkpoint_ids = list(country["checkpoints"].keys())
+    try:
+        result = get_supabase().table("time_stat") \
+            .select("*") \
+            .in_("checkpoint_id", checkpoint_ids) \
+            .eq("direction", direction) \
+            .order("recorded_at", desc=True) \
+            .limit(50) \
+            .execute()
+        stats_data = result.data or []
+    except Exception:
+        logger.exception("handle_stats_direction_selected | DB query failed")
+        send_telegram_request("sendMessage", {
+            "chat_id": chat_id,
+            "text": "⚠️ Помилка отримання даних. Спробуйте пізніше."
+        })
+        return
+
+    latest_stats = {}
+    for row in stats_data:
+        cp_id = row["checkpoint_id"]
+        if cp_id not in latest_stats:
+            latest_stats[cp_id] = row
+
+    direction_str = "Виїзд з України 🇪🇺" if direction == "OUTBOUND" else "В'їзд в Україну 🇺🇦"
+    lines = [
+        f"📊 <b>Статистика: {country['name']} ({direction_str})</b>\n",
+        "<blockquote>ℹ️ <b>Зверніть увагу:</b> Поки наша спільнота зростає, ми тимчасово збираємо дані вручну з профільних чатів. Щойно кількість користувачів збільшиться, тут з'являтиметься автоматична статистика від реальних водіїв!</blockquote>\n"
+    ]
+
+    now = datetime.now(timezone.utc)
+    has_stats, no_stats = [], []
+    
+    for cp_id, cp_name in country["checkpoints"].items():
+        if cp_id in latest_stats:
+            has_stats.append((cp_id, cp_name, latest_stats[cp_id]))
+        else:
+            no_stats.append((cp_id, cp_name))
+            
+    # Sort checkpoints by the most recently updated to help users find the "best" info first
+    has_stats.sort(key=lambda x: x[2]["recorded_at"], reverse=True)
+    
+    for cp_id, cp_name, row in has_stats:
+        # Safely parse Supabase timestamp
+        recorded_at_str = row["recorded_at"].replace("Z", "+00:00")
+        recorded_at = datetime.fromisoformat(recorded_at_str)
+        
+        diff = now - recorded_at
+        hours = int(diff.total_seconds() // 3600)
+        minutes = int((diff.total_seconds() % 3600) // 60)
+        
+        if hours >= 24:
+            time_ago = f"{hours // 24} дн. тому"
+        elif hours > 0:
+            time_ago = f"{hours} год {minutes} хв тому"
+        else:
+            time_ago = f"{minutes} хв тому"
+            
+        comment = row.get("comment") or ""
+        dur = row.get("duration_minutes")
+        dur_str = f" (~{dur} хв)" if dur else ""
+        
+        icon = "🔹"
+        if "🛑" in comment:
+            icon = "🛑"
+        elif "⚠️" in comment:
+            icon = "⚠️"
+            
+        lines.append(f"{icon} <b>{cp_name}</b>{dur_str}\n💬 {comment}\n🕒 <i>Оновлено: {time_ago}</i>\n")
+
+    for cp_id, cp_name in no_stats:
+        lines.append(f"🔹 <b>{cp_name}</b>\n🤷 Немає свіжих даних\n")
+
+    send_telegram_request("sendMessage", {
+        "chat_id": chat_id,
+        "text": "\n".join(lines),
+        "parse_mode": "HTML"
+    })
+
+
 def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int):
     logger.info("route_callback_query | chat_id=%s data=%r", chat_id, data)
     _answer_callback_query(query_id)
@@ -472,6 +593,30 @@ def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int
         logger.info("Route: callback → direction_selected | chat_id=%s checkpoint=%s direction=%s", chat_id, parts[1], parts[2])
         handle_direction_selection(chat_id, message_id, parts[1], parts[2])
 
+    elif action == "stats_country" and len(parts) == 2:
+        logger.info("Route: callback → stats_country | chat_id=%s country=%s", chat_id, parts[1])
+        handle_stats_country_selected(chat_id, parts[1])
+
+    elif action == "stats_dir" and len(parts) == 3:
+        logger.info("Route: callback → stats_dir | chat_id=%s country=%s dir=%s", chat_id, parts[1], parts[2])
+        handle_stats_direction_selected(chat_id, message_id, parts[1], parts[2])
+
+    elif action == "admin_country" and len(parts) == 2:
+        logger.info("Route: callback → admin_country | chat_id=%s country=%s", chat_id, parts[1])
+        handle_country_selected(chat_id, parts[1], prefix="admin_cp")
+
+    elif action == "admin_cp" and len(parts) == 3:
+        logger.info("Route: callback → admin_cp | chat_id=%s cp=%s", chat_id, parts[2])
+        handle_checkpoint_selected(chat_id, parts[1], parts[2], prefix="admin_dir")
+
+    elif action == "admin_dir" and len(parts) == 3:
+        logger.info("Route: callback → admin_dir | chat_id=%s dir=%s", chat_id, parts[2])
+        handle_admin_direction_selected(chat_id, message_id, parts[1], parts[2])
+
+    elif action == "admin_start":
+        logger.info("Route: callback → admin_start | chat_id=%s", chat_id)
+        handle_addstats_cmd(chat_id)
+
     elif action == "adjust_crossing" and len(parts) == 3:
         logger.info("Route: callback → adjust_crossing | chat_id=%s crossing_id=%s minutes=%s", chat_id, parts[1], parts[2])
         handle_adjust_crossing(chat_id, parts[1], int(parts[2]), message_id, query_id)
@@ -484,6 +629,16 @@ def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int
         logger.info("Route: callback → inline_cancel | chat_id=%s", chat_id)
         handle_inline_cancel(chat_id, message_id)
 
+    elif action == "close_success":
+        logger.info("Route: callback → close_success | chat_id=%s", chat_id)
+        send_telegram_request("editMessageText", {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": "✅ Дані успішно збережено до бази!",
+            "reply_markup": {}
+        })
+        send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+
     else:
         logger.warning("route_callback_query | unrecognised action=%r chat_id=%s", action, chat_id)
 
@@ -492,21 +647,21 @@ def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int
 # Request parsing
 # ---------------------------------------------------------------------------
 
-def _extract_request(body: dict) -> tuple[int | None, str | None, str | None, int | None]:
+def _extract_request(body: dict) -> tuple[int | None, str | None, str | None, int | None, dict | None]:
     """
-    Returns (chat_id, text_or_data, query_id, message_id).
+    Returns (chat_id, text_or_data, query_id, message_id, reply_to_message).
     query_id and message_id are set only for callback queries.
     """
     if "callback_query" in body:
         cq = body["callback_query"]
         msg = cq["message"]
-        return msg["chat"]["id"], cq.get("data", ""), cq["id"], msg["message_id"]
+        return msg["chat"]["id"], cq.get("data", ""), cq["id"], msg["message_id"], None
 
     message = body.get("message") or body.get("edited_message")
     if message:
-        return message["chat"]["id"], message.get("text", ""), None, None
+        return message["chat"]["id"], message.get("text", ""), None, None, message.get("reply_to_message")
 
-    return None, None, None, None
+    return None, None, None, None, None
 
 
 # ---------------------------------------------------------------------------
@@ -525,11 +680,17 @@ def lambda_handler(event, context):
     body = json.loads(event.get("body") or "{}")
     logger.info("update_id=%s", body.get("update_id"))
 
-    chat_id, payload, query_id, message_id = _extract_request(body)
+    chat_id, payload, query_id, message_id, reply_to_message = _extract_request(body)
 
     if chat_id is None:
         logger.info("No actionable message found, ignoring update")
         return {"statusCode": 200, "body": "ok"}
+
+    # Intercept admin's ForceReply before processing normal state
+    if reply_to_message:
+        if handle_admin_reply(chat_id, payload, reply_to_message):
+            logger.info("Admin ForceReply handled successfully")
+            return {"statusCode": 200, "body": "ok"}
 
     if query_id is not None:
         route_callback_query(chat_id, payload, query_id, message_id)
