@@ -1,12 +1,15 @@
 import logging
+
+from log_setup import configure_logging
 from datetime import datetime, timezone, timedelta
 
-from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
+from clients import get_supabase, send_telegram_request, send_main_menu
+from redis_sessions import get_all_sessions, update_last_reminded, delete_session
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
 from handler import CMD_START_CROSSING, CMD_STATS, CMD_INFO, GREETINGS_PROMPT_SHORT
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+configure_logging()
+logger = logging.getLogger(__name__)
 
 EVICTION_HOURS = 24
 
@@ -34,7 +37,7 @@ def _last_event_iso(session: dict) -> str:
 def _expire_session(session: dict) -> None:
     chat_id = session["chat_id"]
     logger.info("check_stale_sessions | expiring session | chat_id=%s", chat_id)
-    delete_active_session(chat_id)
+    delete_session(chat_id)
     logger.info("check_stale_sessions | session deleted | chat_id=%s", chat_id)
     send_telegram_request("sendMessage", {
         "chat_id": chat_id,
@@ -79,31 +82,18 @@ def _notify_session(session: dict, now_iso: str) -> None:
         },
     })
 
-    get_supabase().table("active_sessions") \
-        .update({"last_reminded_at": now_iso}) \
-        .eq("chat_id", chat_id) \
-        .execute()
+    update_last_reminded(chat_id, now_iso)
     logger.info("check_stale_sessions | last_reminded_at updated | chat_id=%s", chat_id)
 
 
-def check_stale_sessions(event, context):
+def check_stale_sessions():
     now     = datetime.now(timezone.utc)
     now_iso = now.isoformat()
     eviction_cutoff = (now - timedelta(hours=EVICTION_HOURS)).isoformat()
 
-    # Coarse filter: Exclude users who had any activity/reminder within the minimum silence threshold.
-    min_silence_minutes = _REMINDER_THRESHOLDS[0][1]
-    coarse_cutoff = (now - timedelta(minutes=min_silence_minutes)).isoformat()
-
     logger.info("check_stale_sessions | started | now=%s", now_iso)
 
-    result = get_supabase().table("active_sessions") \
-        .select("chat_id, checkpoint_id, started_at, last_reminded_at, last_user_action_at") \
-        .lt("last_reminded_at", coarse_cutoff) \
-        .lt("last_user_action_at", coarse_cutoff) \
-        .execute()
-
-    sessions = result.data or []
+    sessions = get_all_sessions()
     logger.info("check_stale_sessions | total active sessions=%d", len(sessions))
 
     expired = 0
@@ -136,4 +126,3 @@ def check_stale_sessions(event, context):
             logger.exception("check_stale_sessions | failed for chat_id=%s", session.get("chat_id"))
 
     logger.info("check_stale_sessions | done | expired=%d reminded=%d skipped=%d", expired, reminded, skipped)
-    return {"statusCode": 200, "body": f"expired={expired} reminded={reminded} skipped={skipped}"}

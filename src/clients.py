@@ -22,13 +22,6 @@ def get_supabase() -> Client:
     return _supabase
 
 
-def delete_active_session(chat_id: int) -> None:
-    get_supabase().table("active_sessions") \
-        .delete() \
-        .eq("chat_id", chat_id) \
-        .execute()
-
-
 def send_telegram_request(method: str, payload: dict) -> dict | None:
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/{method}"
     data = json.dumps(payload).encode()

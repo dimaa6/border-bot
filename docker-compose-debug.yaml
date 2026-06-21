@@ -1,0 +1,41 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: border-bot-redis
+    # Dynamically scale host memory reservation boundary
+    mem_limit: "${REDIS_CONTAINER_LIMIT:-256m}"
+    # Pass variables smoothly inside the inner server startup flags
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "${REDIS_LOG_SIZE_LIMIT:-10m}"
+        max-file: "${REDIS_LOG_COUNT_LIMIT:-3}"
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY:-200mb}
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - webhook_net
+
+  insight:
+    image: redis/redisinsight:latest
+    container_name: border-bot-insight
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5540:5540"
+    networks:
+      - webhook_net
+
+volumes:
+  redis_data:
+
+networks:
+  webhook_net:
+    driver: bridge
