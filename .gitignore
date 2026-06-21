@@ -1,2 +1,7 @@
 .aws-sam/
 samconfig.toml
+.env
+**/__pycache__
+.venv
+.vscode/
+logs/

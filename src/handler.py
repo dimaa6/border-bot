@@ -1,10 +1,17 @@
-import json
 import logging
 import os
 import random
 from datetime import datetime, timezone, timedelta
 
-from clients import get_supabase, send_telegram_request, delete_active_session, send_main_menu
+from log_setup import configure_logging
+from clients import get_supabase, send_telegram_request, send_main_menu
+from redis_sessions import (
+    session_exists,
+    get_session,
+    upsert_session,
+    update_last_user_action,
+    delete_session,
+)
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
 from manual_stats import (
     is_admin,
@@ -13,8 +20,9 @@ from manual_stats import (
     handle_admin_reply
 )
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+configure_logging()
+logger = logging.getLogger(__name__)
+
 
 EXPECTED_SECRET = os.environ.get("TELEGRAM_SECRET_TOKEN")
 
@@ -78,14 +86,9 @@ def _answer_callback_query(query_id: str):
 
 def get_user_state(chat_id: int) -> str:
     try:
-        result = get_supabase().table("active_sessions") \
-            .select("chat_id") \
-            .eq("chat_id", chat_id) \
-            .maybe_single() \
-            .execute()
-        return STATE_IN_QUEUE if result.data else STATE_IDLE
+        return STATE_IN_QUEUE if session_exists(chat_id) else STATE_IDLE
     except Exception:
-        logger.exception("get_user_state | DB lookup failed | chat_id=%s", chat_id)
+        logger.exception("get_user_state | Redis lookup failed | chat_id=%s", chat_id)
         return STATE_IDLE
 
 
@@ -128,7 +131,7 @@ def handle_idle_input(chat_id: int, text: str):
                 .gt("completed_at", cutoff) \
                 .maybe_single() \
                 .execute()
-            if result.data:
+            if result and result.data:
                 logger.info("Route: IDLE → start_crossing blocked | recent crossing found | chat_id=%s", chat_id)
                 send_main_menu(chat_id, "Ви надто часто перетинаєте кордон, відпочиньте з дороги 😊", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
                 return
@@ -176,32 +179,28 @@ def handle_idle_input(chat_id: int, text: str):
 def handle_crossed(chat_id: int):
     logger.info("handle_crossed | chat_id=%s", chat_id)
     try:
-        session = get_supabase().table("active_sessions") \
-            .select("checkpoint_id, direction, started_at") \
-            .eq("chat_id", chat_id) \
-            .single() \
-            .execute()
+        session = get_session(chat_id)
 
-        if not session.data:
+        if not session:
             logger.warning("handle_crossed | no active session found | chat_id=%s", chat_id)
             send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
             return
 
         now = datetime.now(timezone.utc)
-        started_at = datetime.fromisoformat(session.data["started_at"])
+        started_at = datetime.fromisoformat(session["started_at"])
         duration_seconds = int((now - started_at).total_seconds())
 
         result = get_supabase().table("border_crossings").insert({
             "chat_id":          chat_id,
-            "checkpoint_id":    session.data["checkpoint_id"],
-            "direction":        session.data["direction"],
-            "started_at":       session.data["started_at"],
+            "checkpoint_id":    session["checkpoint_id"],
+            "direction":        session["direction"],
+            "started_at":       session["started_at"],
             "completed_at":     now.isoformat(),
             "duration_seconds": duration_seconds,
         }).execute()
         crossing_id = result.data[0]["id"]
 
-        delete_active_session(chat_id)
+        delete_session(chat_id)
         logger.info("handle_crossed | session deleted | chat_id=%s duration_seconds=%s", chat_id, duration_seconds)
 
     except Exception:
@@ -241,10 +240,7 @@ def handle_crossed(chat_id: int):
 
 def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, message_id: int | None = None):
     try:
-        get_supabase().table("active_sessions") \
-            .update({"last_user_action_at": datetime.now(timezone.utc).isoformat()}) \
-            .eq("chat_id", chat_id) \
-            .execute()
+        update_last_user_action(chat_id, datetime.now(timezone.utc).isoformat())
         logger.info("handle_still_waiting | session updated | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_still_waiting | DB update failed | chat_id=%s", chat_id)
@@ -277,7 +273,7 @@ def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, mes
 def handle_cancel_queue(chat_id: int):
     logger.info("handle_cancel_queue | chat_id=%s", chat_id)
     try:
-        delete_active_session(chat_id)
+        delete_session(chat_id)
         logger.info("handle_cancel_queue | session deleted | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_cancel_queue | DB delete failed | chat_id=%s", chat_id)
@@ -369,14 +365,14 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
     logger.info("handle_direction_selection | chat_id=%s checkpoint=%s direction=%s", chat_id, checkpoint_id, direction)
     now = datetime.now(timezone.utc).isoformat()
     try:
-        get_supabase().table("active_sessions").upsert({
-            "chat_id":               chat_id,
-            "checkpoint_id":         checkpoint_id,
-            "direction":             direction,
-            "started_at":            now,
-            "last_reminded_at":      now,
-            "last_user_action_at":   now,
-        }, on_conflict="chat_id").execute()
+        upsert_session(
+            chat_id=chat_id,
+            checkpoint_id=checkpoint_id,
+            direction=direction,
+            started_at=now,
+            last_reminded_at=now,
+            last_user_action_at=now,
+        )
         logger.info("handle_direction_selection | session upserted | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_direction_selection | DB upsert failed | chat_id=%s", chat_id)
@@ -665,32 +661,24 @@ def _extract_request(body: dict) -> tuple[int | None, str | None, str | None, in
 
 
 # ---------------------------------------------------------------------------
-# Lambda entry point
+# Web server entry point
 # ---------------------------------------------------------------------------
 
-def lambda_handler(event, context):
-    headers = event.get("headers") or {}
-    received_secret = headers.get("X-Telegram-Bot-Api-Secret-Token") or \
-                      headers.get("x-telegram-bot-api-secret-token")
-
-    if received_secret != EXPECTED_SECRET:
-        logger.error("Unauthorized webhook request")
-        return {"statusCode": 401, "body": "Unauthorized"}
-
-    body = json.loads(event.get("body") or "{}")
+def process_update(body: dict) -> None:
+    """Process a single Telegram update dict. Called from the FastAPI webhook route."""
     logger.info("update_id=%s", body.get("update_id"))
 
     chat_id, payload, query_id, message_id, reply_to_message = _extract_request(body)
 
     if chat_id is None:
         logger.info("No actionable message found, ignoring update")
-        return {"statusCode": 200, "body": "ok"}
+        return
 
     # Intercept admin's ForceReply before processing normal state
     if reply_to_message:
         if handle_admin_reply(chat_id, payload, reply_to_message):
             logger.info("Admin ForceReply handled successfully")
-            return {"statusCode": 200, "body": "ok"}
+            return
 
     if query_id is not None:
         route_callback_query(chat_id, payload, query_id, message_id)
@@ -704,5 +692,3 @@ def lambda_handler(event, context):
             handle_active_queue_input(chat_id, payload)
         else:
             logger.warning("Unknown state=%r for chat_id=%s", state, chat_id)
-
-    return {"statusCode": 200, "body": "ok"}
