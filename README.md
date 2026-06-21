@@ -38,6 +38,14 @@ A lightweight, production-ready Telegram bot built to track and crowdsource bord
 
 1. Rename .env.example to .env and fill in the values
 2. To run standalone:
-   docker compose -f docker-compose-debug.yaml up
+   1. Copy env.example to .env and provide the values
+   1. If redis is listening on localhost, provide REDIS_HOST=localhost in .env
+   1. Provide option LOG_DIR=./logs and mkdir logs if this dir does not exist
+   1. Run docker compose -f docker-compose-debug.yaml up
+   1. You can access redis insight at http://localhost:5540
 3. To run in production:
-   Clone https://github.com/dimaa6/border-bot-docker with submodules and follow instructions there.
+    1. Copy .env.compose.example to .env.compose and edit it
+    1. mkdir logs
+    1. Run docker compose --env-file .env.compose build
+    1. Run docker compose up -d if you don't need redis insight
+    1. Run docker compose --profile debug up -d if you need redis insight at http://localhost:5540. If you are running on headless Linux box, create a SSH tunnel between your local machine and the server's port 5540: ssh -L 5540:localhost:5540 user@your-server

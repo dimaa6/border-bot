@@ -21,7 +21,7 @@ import redis
 
 logger = logging.getLogger(__name__)
 
-_REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+_REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 _REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
 
 _redis_client: redis.Redis | None = None
