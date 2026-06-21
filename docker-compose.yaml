@@ -1,0 +1,60 @@
+services:
+  webhook-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_ID: "${HOST_UID:-1000}"
+        GROUP_ID: "${HOST_GID:-1000}"
+        PORT: "${WEBHOOK_BACKEND_PORT:-8000}"
+    image: border-bot-webhook-backend:latest
+    container_name: border-bot-webhook-backend
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:${WEBHOOK_BACKEND_PORT:-8000}:${WEBHOOK_BACKEND_PORT:-8000}"
+    volumes:
+      - "${WEBHOOK_BACKEND_LOG_DIR:-./logs}:/app/logs"
+    networks:
+      - border_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: border-bot-redis
+    # Dynamically scale host memory reservation boundary
+    mem_limit: "${REDIS_CONTAINER_LIMIT:-256m}"
+    # Pass variables smoothly inside the inner server startup flags
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "${REDIS_LOG_SIZE_LIMIT:-10m}"
+        max-file: "${REDIS_LOG_COUNT_LIMIT:-3}"
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY:-200mb}
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    networks:
+      - border_net
+    restart: unless-stopped
+
+  insight:
+    image: redis/redisinsight:latest
+    container_name: border-bot-insight
+    restart: unless-stopped
+    profiles:
+      - debug
+    ports:
+      - "127.0.0.1:5540:5540"
+    networks:
+      - border_net
+
+volumes:
+  redis_data:
+
+networks:
+  border_net:
+    driver: bridge
