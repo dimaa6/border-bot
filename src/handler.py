@@ -72,60 +72,55 @@ ERROR_DB_SAVE = "⚠️ Помилка збереження даних. Спро
 ERROR_DB_CANCEL = "⚠️ Помилка скасування. Спробуйте ще раз."
 
 # ---------------------------------------------------------------------------
-# Telegram API wrapper (placeholder)
+# Telegram API wrapper
 # ---------------------------------------------------------------------------
 
-def _answer_callback_query(query_id: str):
+async def _answer_callback_query(query_id: str) -> None:
     logger.info("_answer_callback_query | query_id=%s", query_id)
-    send_telegram_request("answerCallbackQuery", {"callback_query_id": query_id})
+    await send_telegram_request("answerCallbackQuery", {"callback_query_id": query_id})
 
 
 # ---------------------------------------------------------------------------
-# State store (mock)
+# State store
 # ---------------------------------------------------------------------------
 
-def get_user_state(chat_id: int) -> str:
+async def get_user_state(chat_id: int) -> str:
     try:
-        return STATE_IN_QUEUE if session_exists(chat_id) else STATE_IDLE
+        return STATE_IN_QUEUE if await session_exists(chat_id) else STATE_IDLE
     except Exception:
         logger.exception("get_user_state | Redis lookup failed | chat_id=%s", chat_id)
         return STATE_IDLE
 
 
 # ---------------------------------------------------------------------------
-# Shared UI helpers
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
 # IDLE state handlers
 # ---------------------------------------------------------------------------
 
-def send_country_selection(chat_id: int, prefix: str = "country"):
+async def send_country_selection(chat_id: int, prefix: str = "country") -> None:
     logger.info("send_country_selection | chat_id=%s prefix=%s", chat_id, prefix)
     buttons = [
         [{"text": meta["name"], "callback_data": f"{prefix}:{code}"}]
         for code, meta in COUNTRIES_AND_CHECKPOINTS.items()
     ]
     buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": "Оберіть країну:",
         "reply_markup": {"inline_keyboard": buttons},
     })
 
 
-def handle_idle_input(chat_id: int, text: str):
+async def handle_idle_input(chat_id: int, text: str) -> None:
     logger.info("handle_idle_input | chat_id=%s text=%r", chat_id, text)
 
     if text == "/start":
         logger.info("Route: IDLE → /start | chat_id=%s", chat_id)
-        send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
     elif text == CMD_START_CROSSING:
         logger.info("Route: IDLE → start_crossing | chat_id=%s", chat_id)
         try:
             cutoff = (datetime.now(timezone.utc) - timedelta(minutes=MIN_CROSSING_INTERVAL_MINUTES)).isoformat()
-            result = get_supabase().table("border_crossings") \
+            result = await get_supabase().table("border_crossings") \
                 .select("id") \
                 .eq("chat_id", chat_id) \
                 .gt("completed_at", cutoff) \
@@ -133,23 +128,23 @@ def handle_idle_input(chat_id: int, text: str):
                 .execute()
             if result and result.data:
                 logger.info("Route: IDLE → start_crossing blocked | recent crossing found | chat_id=%s", chat_id)
-                send_main_menu(chat_id, "Ви надто часто перетинаєте кордон, відпочиньте з дороги 😊", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+                await send_main_menu(chat_id, "Ви надто часто перетинаєте кордон, відпочиньте з дороги 😊", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
                 return
         except Exception:
             logger.exception("Route: IDLE → start_crossing | DB check failed | chat_id=%s", chat_id)
-        send_country_selection(chat_id)
+        await send_country_selection(chat_id)
     elif text == "/addstats":
         logger.info("Route: IDLE → /addstats | chat_id=%s", chat_id)
         if is_admin(chat_id):
-            handle_addstats_cmd(chat_id)
+            await handle_addstats_cmd(chat_id)
         else:
-            send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
     elif text == CMD_STATS:
         logger.info("Route: IDLE → stats | chat_id=%s", chat_id)
-        send_country_selection(chat_id, prefix="stats_country")
+        await send_country_selection(chat_id, prefix="stats_country")
     elif text == CMD_INFO:
         logger.info("Route: IDLE → info | chat_id=%s", chat_id)
-        send_main_menu(chat_id,
+        await send_main_menu(chat_id,
             (
                 "📌 <b>Корисна інформація та спільнота</b>\n\n"
                 "Наш бот допомагає автоматично збирати та фіксувати час очікування, але для живого обговорення, "
@@ -169,28 +164,28 @@ def handle_idle_input(chat_id: int, text: str):
         )
     else:
         logger.info("Route: IDLE → unrecognised input | chat_id=%s text=%r", chat_id, text)
-        send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
 # ---------------------------------------------------------------------------
 # IN_QUEUE state handlers
 # ---------------------------------------------------------------------------
 
-def handle_crossed(chat_id: int):
+async def handle_crossed(chat_id: int) -> None:
     logger.info("handle_crossed | chat_id=%s", chat_id)
     try:
-        session = get_session(chat_id)
+        session = await get_session(chat_id)
 
         if not session:
             logger.warning("handle_crossed | no active session found | chat_id=%s", chat_id)
-            send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
             return
 
         now = datetime.now(timezone.utc)
         started_at = datetime.fromisoformat(session["started_at"])
         duration_seconds = int((now - started_at).total_seconds())
 
-        result = get_supabase().table("border_crossings").insert({
+        result = await get_supabase().table("border_crossings").insert({
             "chat_id":          chat_id,
             "checkpoint_id":    session["checkpoint_id"],
             "direction":        session["direction"],
@@ -200,12 +195,12 @@ def handle_crossed(chat_id: int):
         }).execute()
         crossing_id = result.data[0]["id"]
 
-        delete_session(chat_id)
+        await delete_session(chat_id)
         logger.info("handle_crossed | session deleted | chat_id=%s duration_seconds=%s", chat_id, duration_seconds)
 
     except Exception:
         logger.exception("handle_crossed | DB operation failed | chat_id=%s", chat_id)
-        send_telegram_request("sendMessage", {
+        await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": ERROR_DB_SAVE,
         })
@@ -215,7 +210,7 @@ def handle_crossed(chat_id: int):
     minutes = remainder // 60
     duration_str = f"{hours}г {minutes:02d}хв" if hours else f"{minutes} хв"
 
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": (
             f"Вітаємо із перетином кордону! 🎉\n"
@@ -235,23 +230,27 @@ def handle_crossed(chat_id: int):
             ],
         ]},
     })
-    send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
-def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, message_id: int | None = None):
+async def handle_still_waiting(
+    chat_id: int,
+    callback_query_id: str | None = None,
+    message_id: int | None = None,
+) -> None:
     try:
-        update_last_user_action(chat_id, datetime.now(timezone.utc).isoformat())
+        await update_last_user_action(chat_id, datetime.now(timezone.utc).isoformat())
         logger.info("handle_still_waiting | session updated | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_still_waiting | DB update failed | chat_id=%s", chat_id)
         if callback_query_id:
-            send_telegram_request("answerCallbackQuery", {
+            await send_telegram_request("answerCallbackQuery", {
                 "callback_query_id": callback_query_id,
                 "text": ERROR_DB_UPDATE,
                 "show_alert": True,
             })
         else:
-            send_telegram_request("sendMessage", {
+            await send_telegram_request("sendMessage", {
                 "chat_id": chat_id,
                 "text": ERROR_DB_UPDATE,
             })
@@ -259,47 +258,47 @@ def handle_still_waiting(chat_id: int, callback_query_id: str | None = None, mes
 
     response_text = random.choice(STILL_WAITING_RESPONSES)
     if callback_query_id:
-        send_telegram_request("answerCallbackQuery", {
+        await send_telegram_request("answerCallbackQuery", {
             "callback_query_id": callback_query_id,
             "text": response_text,
         })
     else:
-        send_telegram_request("sendMessage", {
+        await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": response_text,
         })
 
 
-def handle_cancel_queue(chat_id: int):
+async def handle_cancel_queue(chat_id: int) -> None:
     logger.info("handle_cancel_queue | chat_id=%s", chat_id)
     try:
-        delete_session(chat_id)
+        await delete_session(chat_id)
         logger.info("handle_cancel_queue | session deleted | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_cancel_queue | DB delete failed | chat_id=%s", chat_id)
-        send_telegram_request("sendMessage", {
+        await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": ERROR_DB_CANCEL,
         })
         return
-    send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
-def handle_active_queue_input(chat_id: int, text: str):
+async def handle_active_queue_input(chat_id: int, text: str) -> None:
     logger.info("handle_active_queue_input | chat_id=%s text=%r", chat_id, text)
 
     if text == CMD_CROSSED:
         logger.info("Route: IN_QUEUE → handle_crossed | chat_id=%s", chat_id)
-        handle_crossed(chat_id)
+        await handle_crossed(chat_id)
     elif text == CMD_STILL_WAITING:
         logger.info("Route: IN_QUEUE → handle_still_waiting | chat_id=%s", chat_id)
-        handle_still_waiting(chat_id)
+        await handle_still_waiting(chat_id)
     elif text == CMD_CANCEL:
         logger.info("Route: IN_QUEUE → handle_cancel_queue | chat_id=%s", chat_id)
-        handle_cancel_queue(chat_id)
+        await handle_cancel_queue(chat_id)
     else:
         logger.info("Route: IN_QUEUE → unrecognised input, re-sending queue keyboard | chat_id=%s text=%r", chat_id, text)
-        send_telegram_request("sendMessage", {
+        await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": "Ви вже в черзі. Скористайтесь кнопками нижче.",
             "reply_markup": {
@@ -318,18 +317,18 @@ def handle_active_queue_input(chat_id: int, text: str):
 # Callback query routing
 # ---------------------------------------------------------------------------
 
-def handle_inline_cancel(chat_id: int, message_id: int):
+async def handle_inline_cancel(chat_id: int, message_id: int) -> None:
     logger.info("handle_inline_cancel | chat_id=%s message_id=%s", chat_id, message_id)
-    send_telegram_request("editMessageText", {
+    await send_telegram_request("editMessageText", {
         "chat_id": chat_id,
         "message_id": message_id,
         "text": "❌ Введення скасовано.",
         "reply_markup": {},
     })
-    send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
 
-def handle_country_selected(chat_id: int, country_code: str, prefix: str = "checkpoint"):
+async def handle_country_selected(chat_id: int, country_code: str, prefix: str = "checkpoint") -> None:
     logger.info("handle_country_selected | chat_id=%s country=%s prefix=%s", chat_id, country_code, prefix)
     country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
     if not country:
@@ -340,17 +339,22 @@ def handle_country_selected(chat_id: int, country_code: str, prefix: str = "chec
         for cp_id, name in country["checkpoints"].items()
     ]
     buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"Оберіть пункт пропуску ({country['name']}):",
         "reply_markup": {"inline_keyboard": buttons},
     })
 
 
-def handle_checkpoint_selected(chat_id: int, country_code: str, checkpoint_id: str, prefix: str = "direction"):
-    logger.info("handle_checkpoint_selected | chat_id=%s country=%s checkpoint=%s prefix=%s", chat_id, country_code, checkpoint_id, prefix)
+async def handle_checkpoint_selected(
+    chat_id: int, country_code: str, checkpoint_id: str, prefix: str = "direction"
+) -> None:
+    logger.info(
+        "handle_checkpoint_selected | chat_id=%s country=%s checkpoint=%s prefix=%s",
+        chat_id, country_code, checkpoint_id, prefix,
+    )
     checkpoint_name = COUNTRIES_AND_CHECKPOINTS.get(country_code, {}).get("checkpoints", {}).get(checkpoint_id, checkpoint_id)
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"Оберіть напрямок руху ({checkpoint_name}):",
         "reply_markup": {"inline_keyboard": [
@@ -361,11 +365,16 @@ def handle_checkpoint_selected(chat_id: int, country_code: str, checkpoint_id: s
     })
 
 
-def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str, direction: str):
-    logger.info("handle_direction_selection | chat_id=%s checkpoint=%s direction=%s", chat_id, checkpoint_id, direction)
+async def handle_direction_selection(
+    chat_id: int, message_id: int, checkpoint_id: str, direction: str
+) -> None:
+    logger.info(
+        "handle_direction_selection | chat_id=%s checkpoint=%s direction=%s",
+        chat_id, checkpoint_id, direction,
+    )
     now = datetime.now(timezone.utc).isoformat()
     try:
-        upsert_session(
+        await upsert_session(
             chat_id=chat_id,
             checkpoint_id=checkpoint_id,
             direction=direction,
@@ -376,7 +385,7 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
         logger.info("handle_direction_selection | session upserted | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_direction_selection | DB upsert failed | chat_id=%s", chat_id)
-        send_telegram_request("sendMessage", {
+        await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": ERROR_DB_SAVE,
         })
@@ -387,17 +396,17 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
         if checkpoint_id in country["checkpoints"]:
             checkpoint_name = country["checkpoints"][checkpoint_id]
             break
-    
+
     direction_text = "🇪🇺 Виїзд з України" if direction == "OUTBOUND" else "🇺🇦 В'їзд в Україну"
-    
-    send_telegram_request("editMessageText", {
+
+    await send_telegram_request("editMessageText", {
         "chat_id":    chat_id,
         "message_id": message_id,
         "text":       f"⏱ Сесія розпочата.\n\nПункт пропуску: <b>{checkpoint_name}</b>\nНапрямок: {direction_text}\n\nУдачі вам!",
         "parse_mode": "HTML",
         "reply_markup": {},
     })
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": (
             "Натисніть <b>✅ Я проїхав!</b> одразу, як проїдете кордон, або "
@@ -417,10 +426,15 @@ def handle_direction_selection(chat_id: int, message_id: int, checkpoint_id: str
     logger.info("handle_direction_selection | IN_QUEUE keyboard sent | chat_id=%s", chat_id)
 
 
-def handle_adjust_crossing(chat_id: int, crossing_id: str, adjust_minutes: int, message_id: int, query_id: str):
-    logger.info("handle_adjust_crossing | chat_id=%s crossing_id=%s adjust_minutes=%s", chat_id, crossing_id, adjust_minutes)
+async def handle_adjust_crossing(
+    chat_id: int, crossing_id: str, adjust_minutes: int, message_id: int, query_id: str
+) -> None:
+    logger.info(
+        "handle_adjust_crossing | chat_id=%s crossing_id=%s adjust_minutes=%s",
+        chat_id, crossing_id, adjust_minutes,
+    )
     try:
-        row = get_supabase().table("border_crossings") \
+        row = await get_supabase().table("border_crossings") \
             .select("started_at, completed_at") \
             .eq("id", crossing_id) \
             .single() \
@@ -429,31 +443,34 @@ def handle_adjust_crossing(chat_id: int, crossing_id: str, adjust_minutes: int, 
         started_at   = datetime.fromisoformat(row.data["started_at"])
         completed_at = datetime.fromisoformat(row.data["completed_at"]) - timedelta(minutes=adjust_minutes)
         if completed_at < started_at:
-            return send_telegram_request("answerCallbackQuery", {
+            return await send_telegram_request("answerCallbackQuery", {
                 "callback_query_id": query_id,
                 "text": "⚠️ Невірне коригування. Час проходження не може бути раніше часу початку черги.",
                 "show_alert": True,
             })
         duration_seconds = max(0, int((completed_at - started_at).total_seconds()))
 
-        get_supabase().table("border_crossings") \
+        await get_supabase().table("border_crossings") \
             .update({
                 "completed_at":     completed_at.isoformat(),
                 "duration_seconds": duration_seconds,
             }) \
             .eq("id", crossing_id) \
             .execute()
-        logger.info("handle_adjust_crossing | updated | crossing_id=%s new_duration=%s", crossing_id, duration_seconds)
+        logger.info(
+            "handle_adjust_crossing | updated | crossing_id=%s new_duration=%s",
+            crossing_id, duration_seconds,
+        )
     except Exception:
         logger.exception("handle_adjust_crossing | DB update failed | chat_id=%s", chat_id)
-        send_telegram_request("answerCallbackQuery", {
+        await send_telegram_request("answerCallbackQuery", {
             "callback_query_id": query_id,
             "text": ERROR_DB_UPDATE,
             "show_alert": True,
         })
         return
 
-    send_telegram_request("editMessageText", {
+    await send_telegram_request("editMessageText", {
         "chat_id":    chat_id,
         "message_id": message_id,
         "text":       f"✅ Час скориговано на {adjust_minutes} хв раніше. Дякуємо за точні дані! 👍",
@@ -461,12 +478,12 @@ def handle_adjust_crossing(chat_id: int, crossing_id: str, adjust_minutes: int, 
     })
 
 
-def handle_stats_country_selected(chat_id: int, country_code: str):
+async def handle_stats_country_selected(chat_id: int, country_code: str) -> None:
     logger.info("handle_stats_country_selected | chat_id=%s country=%s", chat_id, country_code)
     country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
     if not country:
         return
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"📊 Статистика ({country['name']})\nОберіть напрямок:",
         "reply_markup": {"inline_keyboard": [
@@ -477,13 +494,18 @@ def handle_stats_country_selected(chat_id: int, country_code: str):
     })
 
 
-def handle_stats_direction_selected(chat_id: int, message_id: int, country_code: str, direction: str):
-    logger.info("handle_stats_direction_selected | chat_id=%s country=%s dir=%s", chat_id, country_code, direction)
+async def handle_stats_direction_selected(
+    chat_id: int, message_id: int, country_code: str, direction: str
+) -> None:
+    logger.info(
+        "handle_stats_direction_selected | chat_id=%s country=%s dir=%s",
+        chat_id, country_code, direction,
+    )
     country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
     if not country:
         return
 
-    send_telegram_request("editMessageText", {
+    await send_telegram_request("editMessageText", {
         "chat_id": chat_id,
         "message_id": message_id,
         "text": "⏳ Збираємо останні дані...",
@@ -492,7 +514,7 @@ def handle_stats_direction_selected(chat_id: int, message_id: int, country_code:
 
     checkpoint_ids = list(country["checkpoints"].keys())
     try:
-        result = get_supabase().table("time_stat") \
+        result = await get_supabase().table("time_stat") \
             .select("*") \
             .in_("checkpoint_id", checkpoint_ids) \
             .eq("direction", direction) \
@@ -502,7 +524,7 @@ def handle_stats_direction_selected(chat_id: int, message_id: int, country_code:
         stats_data = result.data or []
     except Exception:
         logger.exception("handle_stats_direction_selected | DB query failed")
-        send_telegram_request("sendMessage", {
+        await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": "⚠️ Помилка отримання даних. Спробуйте пізніше."
         })
@@ -522,118 +544,120 @@ def handle_stats_direction_selected(chat_id: int, message_id: int, country_code:
 
     now = datetime.now(timezone.utc)
     has_stats, no_stats = [], []
-    
+
     for cp_id, cp_name in country["checkpoints"].items():
         if cp_id in latest_stats:
             has_stats.append((cp_id, cp_name, latest_stats[cp_id]))
         else:
             no_stats.append((cp_id, cp_name))
-            
+
     # Sort checkpoints by the most recently updated to help users find the "best" info first
     has_stats.sort(key=lambda x: x[2]["recorded_at"], reverse=True)
-    
+
     for cp_id, cp_name, row in has_stats:
         # Safely parse Supabase timestamp
         recorded_at_str = row["recorded_at"].replace("Z", "+00:00")
         recorded_at = datetime.fromisoformat(recorded_at_str)
-        
+
         diff = now - recorded_at
         hours = int(diff.total_seconds() // 3600)
         minutes = int((diff.total_seconds() % 3600) // 60)
-        
+
         if hours >= 24:
             time_ago = f"{hours // 24} дн. тому"
         elif hours > 0:
             time_ago = f"{hours} год {minutes} хв тому"
         else:
             time_ago = f"{minutes} хв тому"
-            
+
         comment = row.get("comment") or ""
         dur = row.get("duration_minutes")
         dur_str = f" (~{dur} хв)" if dur else ""
-        
+
         icon = "🔹"
         if "🛑" in comment:
             icon = "🛑"
         elif "⚠️" in comment:
             icon = "⚠️"
-            
+
         lines.append(f"{icon} <b>{cp_name}</b>{dur_str}\n💬 {comment}\n🕒 <i>Оновлено: {time_ago}</i>\n")
 
     for cp_id, cp_name in no_stats:
         lines.append(f"🔹 <b>{cp_name}</b>\n🤷 Немає свіжих даних\n")
 
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": "\n".join(lines),
         "parse_mode": "HTML"
     })
 
 
-def route_callback_query(chat_id: int, data: str, query_id: str, message_id: int):
+async def route_callback_query(
+    chat_id: int, data: str, query_id: str, message_id: int
+) -> None:
     logger.info("route_callback_query | chat_id=%s data=%r", chat_id, data)
-    _answer_callback_query(query_id)
+    await _answer_callback_query(query_id)
 
     parts = data.split(":")
     action = parts[0]
 
     if action == "country" and len(parts) == 2:
         logger.info("Route: callback → country_selected | chat_id=%s", chat_id)
-        handle_country_selected(chat_id, parts[1])
+        await handle_country_selected(chat_id, parts[1])
 
     elif action == "checkpoint" and len(parts) == 3:
         logger.info("Route: callback → checkpoint_selected | chat_id=%s", chat_id)
-        handle_checkpoint_selected(chat_id, parts[1], parts[2])
+        await handle_checkpoint_selected(chat_id, parts[1], parts[2])
 
     elif action == "direction" and len(parts) == 3:
         logger.info("Route: callback → direction_selected | chat_id=%s checkpoint=%s direction=%s", chat_id, parts[1], parts[2])
-        handle_direction_selection(chat_id, message_id, parts[1], parts[2])
+        await handle_direction_selection(chat_id, message_id, parts[1], parts[2])
 
     elif action == "stats_country" and len(parts) == 2:
         logger.info("Route: callback → stats_country | chat_id=%s country=%s", chat_id, parts[1])
-        handle_stats_country_selected(chat_id, parts[1])
+        await handle_stats_country_selected(chat_id, parts[1])
 
     elif action == "stats_dir" and len(parts) == 3:
         logger.info("Route: callback → stats_dir | chat_id=%s country=%s dir=%s", chat_id, parts[1], parts[2])
-        handle_stats_direction_selected(chat_id, message_id, parts[1], parts[2])
+        await handle_stats_direction_selected(chat_id, message_id, parts[1], parts[2])
 
     elif action == "admin_country" and len(parts) == 2:
         logger.info("Route: callback → admin_country | chat_id=%s country=%s", chat_id, parts[1])
-        handle_country_selected(chat_id, parts[1], prefix="admin_cp")
+        await handle_country_selected(chat_id, parts[1], prefix="admin_cp")
 
     elif action == "admin_cp" and len(parts) == 3:
         logger.info("Route: callback → admin_cp | chat_id=%s cp=%s", chat_id, parts[2])
-        handle_checkpoint_selected(chat_id, parts[1], parts[2], prefix="admin_dir")
+        await handle_checkpoint_selected(chat_id, parts[1], parts[2], prefix="admin_dir")
 
     elif action == "admin_dir" and len(parts) == 3:
         logger.info("Route: callback → admin_dir | chat_id=%s dir=%s", chat_id, parts[2])
-        handle_admin_direction_selected(chat_id, message_id, parts[1], parts[2])
+        await handle_admin_direction_selected(chat_id, message_id, parts[1], parts[2])
 
     elif action == "admin_start":
         logger.info("Route: callback → admin_start | chat_id=%s", chat_id)
-        handle_addstats_cmd(chat_id)
+        await handle_addstats_cmd(chat_id)
 
     elif action == "adjust_crossing" and len(parts) == 3:
         logger.info("Route: callback → adjust_crossing | chat_id=%s crossing_id=%s minutes=%s", chat_id, parts[1], parts[2])
-        handle_adjust_crossing(chat_id, parts[1], int(parts[2]), message_id, query_id)
+        await handle_adjust_crossing(chat_id, parts[1], int(parts[2]), message_id, query_id)
 
     elif action == "still_waiting" and len(parts) == 2:
         logger.info("Route: callback → still_waiting | chat_id=%s", chat_id)
-        handle_still_waiting(chat_id, query_id, message_id)
+        await handle_still_waiting(chat_id, query_id, message_id)
 
     elif action == "cancel":
         logger.info("Route: callback → inline_cancel | chat_id=%s", chat_id)
-        handle_inline_cancel(chat_id, message_id)
+        await handle_inline_cancel(chat_id, message_id)
 
     elif action == "close_success":
         logger.info("Route: callback → close_success | chat_id=%s", chat_id)
-        send_telegram_request("editMessageText", {
+        await send_telegram_request("editMessageText", {
             "chat_id": chat_id,
             "message_id": message_id,
             "text": "✅ Дані успішно збережено до бази!",
             "reply_markup": {}
         })
-        send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
 
     else:
         logger.warning("route_callback_query | unrecognised action=%r chat_id=%s", action, chat_id)
@@ -664,7 +688,7 @@ def _extract_request(body: dict) -> tuple[int | None, str | None, str | None, in
 # Web server entry point
 # ---------------------------------------------------------------------------
 
-def process_update(body: dict) -> None:
+async def process_update(body: dict) -> None:
     """Process a single Telegram update dict. Called from the FastAPI webhook route."""
     logger.info("update_id=%s", body.get("update_id"))
 
@@ -676,19 +700,19 @@ def process_update(body: dict) -> None:
 
     # Intercept admin's ForceReply before processing normal state
     if reply_to_message:
-        if handle_admin_reply(chat_id, payload, reply_to_message):
+        if await handle_admin_reply(chat_id, payload, reply_to_message):
             logger.info("Admin ForceReply handled successfully")
             return
 
     if query_id is not None:
-        route_callback_query(chat_id, payload, query_id, message_id)
+        await route_callback_query(chat_id, payload, query_id, message_id)
     else:
-        state = get_user_state(chat_id)
+        state = await get_user_state(chat_id)
         logger.info("User state | chat_id=%s state=%s", chat_id, state)
 
         if state == STATE_IDLE:
-            handle_idle_input(chat_id, payload)
+            await handle_idle_input(chat_id, payload)
         elif state == STATE_IN_QUEUE:
-            handle_active_queue_input(chat_id, payload)
+            await handle_active_queue_input(chat_id, payload)
         else:
             logger.warning("Unknown state=%r for chat_id=%s", state, chat_id)

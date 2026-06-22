@@ -22,7 +22,7 @@ _REMINDER_THRESHOLDS = [
 
 
 def _required_silence_minutes(started_at_iso: str, now: datetime) -> int:
-    started_at  = datetime.fromisoformat(started_at_iso)
+    started_at = datetime.fromisoformat(started_at_iso)
     hours_in_queue = (now - started_at).total_seconds() / 3600
     for max_hours, silence_minutes in _REMINDER_THRESHOLDS:
         if max_hours is None or hours_in_queue < max_hours:
@@ -34,24 +34,6 @@ def _last_event_iso(session: dict) -> str:
     return max(session["last_reminded_at"], session["last_user_action_at"])
 
 
-def _expire_session(session: dict) -> None:
-    chat_id = session["chat_id"]
-    logger.info("check_stale_sessions | expiring session | chat_id=%s", chat_id)
-    delete_session(chat_id)
-    logger.info("check_stale_sessions | session deleted | chat_id=%s", chat_id)
-    send_telegram_request("sendMessage", {
-        "chat_id": chat_id,
-        "text": "Ми не чули від вас довгий час, тому ми видалили вас зі списку очікування. Щасливої дороги🚗",
-    })
-    send_main_menu(
-        chat_id,
-        GREETINGS_PROMPT_SHORT,
-        CMD_START_CROSSING,
-        CMD_STATS,
-        CMD_INFO
-    )
-
-
 def _get_checkpoint_name(checkpoint_id: str) -> str:
     for country in COUNTRIES_AND_CHECKPOINTS.values():
         name = country["checkpoints"].get(checkpoint_id)
@@ -60,14 +42,32 @@ def _get_checkpoint_name(checkpoint_id: str) -> str:
     return checkpoint_id
 
 
-def _notify_session(session: dict, now_iso: str) -> None:
+async def _expire_session(session: dict) -> None:
+    chat_id = session["chat_id"]
+    logger.info("check_stale_sessions | expiring session | chat_id=%s", chat_id)
+    await delete_session(chat_id)
+    logger.info("check_stale_sessions | session deleted | chat_id=%s", chat_id)
+    await send_telegram_request("sendMessage", {
+        "chat_id": chat_id,
+        "text": "Ми не чули від вас довгий час, тому ми видалили вас зі списку очікування. Щасливої дороги🚗",
+    })
+    await send_main_menu(
+        chat_id,
+        GREETINGS_PROMPT_SHORT,
+        CMD_START_CROSSING,
+        CMD_STATS,
+        CMD_INFO,
+    )
+
+
+async def _notify_session(session: dict, now_iso: str) -> None:
     chat_id       = session["chat_id"]
     checkpoint_id = session["checkpoint_id"]
     checkpoint    = _get_checkpoint_name(checkpoint_id)
 
     logger.info("check_stale_sessions | notifying | chat_id=%s checkpoint=%s", chat_id, checkpoint_id)
 
-    send_telegram_request("sendMessage", {
+    await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"Ви все ще на КПП *{checkpoint}*? Будь ласка, оновіть свій статус ⬇️",
         "parse_mode": "Markdown",
@@ -82,18 +82,18 @@ def _notify_session(session: dict, now_iso: str) -> None:
         },
     })
 
-    update_last_reminded(chat_id, now_iso)
+    await update_last_reminded(chat_id, now_iso)
     logger.info("check_stale_sessions | last_reminded_at updated | chat_id=%s", chat_id)
 
 
-def check_stale_sessions():
+async def check_stale_sessions() -> None:
     now     = datetime.now(timezone.utc)
     now_iso = now.isoformat()
     eviction_cutoff = (now - timedelta(hours=EVICTION_HOURS)).isoformat()
 
     logger.info("check_stale_sessions | started | now=%s", now_iso)
 
-    sessions = get_all_sessions()
+    sessions = await get_all_sessions()
     logger.info("check_stale_sessions | total active sessions=%d", len(sessions))
 
     expired = 0
@@ -104,7 +104,7 @@ def check_stale_sessions():
         try:
             if session["last_user_action_at"] < eviction_cutoff:
                 logger.info("check_stale_sessions | no user action for 24h | chat_id=%s", session["chat_id"])
-                _expire_session(session)
+                await _expire_session(session)
                 expired += 1
                 continue
 
@@ -117,7 +117,7 @@ def check_stale_sessions():
                     "check_stale_sessions | silence exceeded %dm | chat_id=%s",
                     silence_minutes, session["chat_id"],
                 )
-                _notify_session(session, now_iso)
+                await _notify_session(session, now_iso)
                 reminded += 1
             else:
                 skipped += 1

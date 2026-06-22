@@ -5,7 +5,6 @@ Run with:
     uvicorn main:app --host 0.0.0.0 --port 8000
 """
 
-import json
 import logging
 import os
 
@@ -14,7 +13,7 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # ---------------------------------------------------------------------------
 # Bootstrap
@@ -26,18 +25,7 @@ load_dotenv()
 configure_logging()
 logger = logging.getLogger(__name__)
 
-
 EXPECTED_SECRET = os.environ.get("TELEGRAM_SECRET_TOKEN")
-
-# ---------------------------------------------------------------------------
-# Scheduler (replaces the stale_sessions Lambda cron trigger)
-# ---------------------------------------------------------------------------
-
-# Import here so the module is ready before the scheduler fires
-from stale_sessions import check_stale_sessions  # noqa: E402
-
-scheduler = BackgroundScheduler(timezone="UTC")
-
 
 # ---------------------------------------------------------------------------
 # App lifecycle
@@ -45,6 +33,15 @@ scheduler = BackgroundScheduler(timezone="UTC")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Eagerly initialise the async Supabase client so the first real request
+    # pays no extra overhead.
+    from clients import init_supabase
+    await init_supabase()
+
+    # Import here so the module is ready before the scheduler fires
+    from stale_sessions import check_stale_sessions  # noqa: E402
+
+    scheduler = AsyncIOScheduler(timezone="UTC")
     scheduler.add_job(
         check_stale_sessions,
         trigger="cron",
@@ -53,17 +50,19 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("APScheduler started – stale-session job runs at :00 and :30 every hour (UTC)")
+    logger.info("AsyncIOScheduler started – stale-session job runs at :00 and :30 every hour (UTC)")
+
     yield
+
     scheduler.shutdown(wait=False)
-    logger.info("APScheduler stopped")
+    logger.info("AsyncIOScheduler stopped")
 
 
 app = FastAPI(title="BorderBot Webhook", lifespan=lifespan)
 
 
 # ---------------------------------------------------------------------------
-# Webhook route (replaces handler.lambda_handler)
+# Webhook route
 # ---------------------------------------------------------------------------
 
 @app.post("/webhook")
@@ -84,7 +83,7 @@ async def webhook(request: Request) -> Response:
     # --- Dispatch to business logic ---
     from handler import process_update  # local import keeps startup fast
     try:
-        process_update(body)
+        await process_update(body)
     except Exception:
         logger.exception("Unhandled error in process_update")
 
