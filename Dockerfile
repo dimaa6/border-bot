@@ -12,6 +12,8 @@ ENV PORT=${PORT}
 
 RUN addgroup -g ${GROUP_ID} appgroup && adduser -D -u ${USER_ID} -G appgroup appuser
 
+RUN mkdir -p /app/db && chown -R appuser:appgroup /app/db
+
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
