@@ -11,8 +11,8 @@ services:
     container_name: border-bot-webhook-backend
     env_file:
       - .env
-    ports:
-      - "127.0.0.1:${WEBHOOK_BACKEND_PORT:-8000}:${WEBHOOK_BACKEND_PORT:-8000}"
+    expose:
+      - 8000
     volumes:
       - "${WEBHOOK_BACKEND_LOG_DIR:-./logs}:/app/logs"
     networks:
@@ -51,6 +51,16 @@ services:
       - "127.0.0.1:5540:5540"
     networks:
       - border_net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: border-bot-tunnel
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    networks:
+      - border_net
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
 
 volumes:
   redis_data:
