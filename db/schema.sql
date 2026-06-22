@@ -27,7 +27,8 @@ CREATE TABLE public.time_stat (
     duration_minutes INTEGER,
     comment TEXT,
     recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    is_manual BOOLEAN NOT NULL DEFAULT FALSE
+    is_manual BOOLEAN NOT NULL DEFAULT FALSE,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
 -- create tale for scraper configuration

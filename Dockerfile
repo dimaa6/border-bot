@@ -12,7 +12,7 @@ ENV PORT=${PORT}
 
 RUN addgroup -g ${GROUP_ID} appgroup && adduser -D -u ${USER_ID} -G appgroup appuser
 
-RUN mkdir -p /app/db && chown -R appuser:appgroup /app/db
+RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
 
 COPY requirements.txt .
 
