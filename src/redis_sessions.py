@@ -18,6 +18,8 @@ so that check_stale_sessions can enumerate all active sessions efficiently.
 import logging
 import os
 
+from datetime import datetime
+
 from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ _REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
 
 _redis_client: Redis | None = None
 
-_INDEX_KEY = "active_session_ids"   # Redis Set of str(chat_id)
+_INDEX_KEY = "active_session_zset"   # Redis ZSET mapping str(chat_id) -> last_event_ts
 
 
 def get_redis() -> Redis:
@@ -78,19 +80,29 @@ async def upsert_session(
         "last_reminded_at":    last_reminded_at,
         "last_user_action_at": last_user_action_at,
     })
-    await r.sadd(_INDEX_KEY, str(chat_id))
+    
+    last_event_iso = max(last_reminded_at, last_user_action_at)
+    score = datetime.fromisoformat(last_event_iso).timestamp()
+    await r.zadd(_INDEX_KEY, {str(chat_id): score})
+    
     logger.debug("upsert_session | chat_id=%s", chat_id)
 
 
 async def update_last_user_action(chat_id: int, timestamp_iso: str) -> None:
     """Update last_user_action_at for an existing session."""
-    await get_redis().hset(_session_key(chat_id), "last_user_action_at", timestamp_iso)
+    r = get_redis()
+    await r.hset(_session_key(chat_id), "last_user_action_at", timestamp_iso)
+    score = datetime.fromisoformat(timestamp_iso).timestamp()
+    await r.zadd(_INDEX_KEY, {str(chat_id): score})
     logger.debug("update_last_user_action | chat_id=%s", chat_id)
 
 
 async def update_last_reminded(chat_id: int, timestamp_iso: str) -> None:
     """Update last_reminded_at for an existing session."""
-    await get_redis().hset(_session_key(chat_id), "last_reminded_at", timestamp_iso)
+    r = get_redis()
+    await r.hset(_session_key(chat_id), "last_reminded_at", timestamp_iso)
+    score = datetime.fromisoformat(timestamp_iso).timestamp()
+    await r.zadd(_INDEX_KEY, {str(chat_id): score})
     logger.debug("update_last_reminded | chat_id=%s", chat_id)
 
 
@@ -98,25 +110,27 @@ async def delete_session(chat_id: int) -> None:
     """Delete the active session for chat_id."""
     r = get_redis()
     await r.delete(_session_key(chat_id))
-    await r.srem(_INDEX_KEY, str(chat_id))
+    await r.zrem(_INDEX_KEY, str(chat_id))
     logger.debug("delete_session | chat_id=%s", chat_id)
 
 
-async def get_all_sessions() -> list[dict]:
+from typing import AsyncGenerator
+
+async def iter_potentially_stale_sessions(cutoff_ts: float) -> AsyncGenerator[dict, None]:
     """
-    Return a list of all active session dicts (each includes a 'chat_id' int field).
-    Used by the stale-session checker.
+    Yields session dicts for chat_ids whose last event timestamp is <= cutoff_ts.
+    This avoids loading all sessions into memory at once.
     """
     r = get_redis()
-    chat_ids = await r.smembers(_INDEX_KEY)
-    sessions = []
+    # Find all chat_ids that haven't been updated since cutoff_ts
+    chat_ids = await r.zrange(_INDEX_KEY, 0, cutoff_ts, byscore=True)
+    
     for cid_str in chat_ids:
         key = _session_key(int(cid_str))
         data = await r.hgetall(key)
         if data:
             data["chat_id"] = int(cid_str)
-            sessions.append(data)
+            yield data
         else:
             # Index entry without a hash — clean up the stale index entry
-            await r.srem(_INDEX_KEY, cid_str)
-    return sessions
+            await r.zrem(_INDEX_KEY, cid_str)

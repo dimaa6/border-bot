@@ -4,7 +4,7 @@ from log_setup import configure_logging
 from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, send_main_menu
-from redis_sessions import get_all_sessions, update_last_reminded, delete_session
+from redis_sessions import iter_potentially_stale_sessions, update_last_reminded, delete_session
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
 from handler import CMD_START_CROSSING, CMD_STATS, CMD_INFO, GREETINGS_PROMPT_SHORT
 
@@ -91,16 +91,19 @@ async def check_stale_sessions() -> None:
     now_iso = now.isoformat()
     eviction_cutoff = (now - timedelta(hours=EVICTION_HOURS)).isoformat()
 
-    logger.info("check_stale_sessions | started | now=%s", now_iso)
+    # 55 minutes is the minimum silence threshold, meaning any session that had activity
+    # more recently than 55 minutes ago is definitely NOT stale.
+    min_silence_minutes = _REMINDER_THRESHOLDS[0][1]
+    coarse_cutoff = now - timedelta(minutes=min_silence_minutes)
+    coarse_cutoff_ts = coarse_cutoff.timestamp()
 
-    sessions = await get_all_sessions()
-    logger.info("check_stale_sessions | total active sessions=%d", len(sessions))
+    logger.info("check_stale_sessions | started | now=%s coarse_cutoff_ts=%s", now_iso, coarse_cutoff_ts)
 
     expired = 0
     reminded = 0
     skipped = 0
 
-    for session in sessions:
+    async for session in iter_potentially_stale_sessions(coarse_cutoff_ts):
         try:
             if session["last_user_action_at"] < eviction_cutoff:
                 logger.info("check_stale_sessions | no user action for 24h | chat_id=%s", session["chat_id"])
