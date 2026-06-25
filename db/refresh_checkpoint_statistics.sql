@@ -8,7 +8,8 @@ BEGIN
             checkpoint_id,
             direction,
             'car'::TEXT AS transport_type,
-            (duration_seconds / 60)::INTEGER AS duration_minutes
+            (duration_seconds / 60)::INTEGER AS duration_minutes,
+            completed_at AS event_time
         FROM public.border_crossings
         WHERE completed_at > NOW() - INTERVAL '6 hours'
     ),
@@ -22,7 +23,8 @@ BEGIN
             0 AS sorting_priority,
             'ACTUAL'::TEXT AS data_source,
             NULL::BOOLEAN AS is_jammed,
-            NULL::BOOLEAN AS is_warning
+            NULL::BOOLEAN AS is_warning,
+            MAX(event_time) AS source_updated_at
         FROM recent_actuals
         GROUP BY checkpoint_id, direction, transport_type
     ),
@@ -37,10 +39,11 @@ BEGIN
             1 AS sorting_priority,
             'PREDICTION'::TEXT AS data_source,
             (metadata->'llm'->>'is_jammed')::BOOLEAN AS is_jammed,
-            (metadata->'llm'->>'is_warning')::BOOLEAN AS is_warning
+            (metadata->'llm'->>'is_warning')::BOOLEAN AS is_warning,
+            COALESCE(extracted_at, recorded_at) AS source_updated_at
         FROM public.time_stat
         WHERE is_manual = false
-        ORDER BY checkpoint_id, direction, transport_type, recorded_at DESC
+        ORDER BY checkpoint_id, direction, transport_type, COALESCE(extracted_at, recorded_at) DESC
     ),
     admin_fallback_latest AS (
         -- Priority 2: Latest Fallback Math Calculation (is_manual = true)
@@ -53,10 +56,11 @@ BEGIN
             2 AS sorting_priority,
             'ADMIN'::TEXT AS data_source,
             (metadata->'llm'->>'is_jammed')::BOOLEAN AS is_jammed,
-            (metadata->'llm'->>'is_warning')::BOOLEAN AS is_warning
+            (metadata->'llm'->>'is_warning')::BOOLEAN AS is_warning,
+            COALESCE(extracted_at, recorded_at) AS source_updated_at
         FROM public.time_stat
         WHERE is_manual = true
-        ORDER BY checkpoint_id, direction, transport_type, recorded_at DESC
+        ORDER BY checkpoint_id, direction, transport_type, COALESCE(extracted_at, recorded_at) DESC
     ),
     combined_results AS (
         SELECT * FROM actual_averages
@@ -75,13 +79,14 @@ BEGIN
             r_count,
             data_source,
             is_jammed,
-            is_warning
+            is_warning,
+            source_updated_at
         FROM combined_results
         ORDER BY checkpoint_id, direction, transport_type, sorting_priority ASC
     )
     -- Upsert the compiled results straight into our dedicated lookup table
     INSERT INTO public.checkpoint_status (checkpoint_id, direction, transport_type, avg_duration_minutes, reports_count, data_source, updated_at, is_warning, is_jammed)
-    SELECT checkpoint_id, direction, transport_type, avg_time, r_count, data_source, NOW(), is_warning, is_jammed
+    SELECT checkpoint_id, direction, transport_type, avg_time, r_count, data_source, source_updated_at, is_warning, is_jammed
     FROM filtered_results
     ON CONFLICT (checkpoint_id, direction, transport_type) 
     DO UPDATE SET 

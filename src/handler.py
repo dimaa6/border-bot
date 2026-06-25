@@ -477,6 +477,16 @@ async def handle_adjust_crossing(
         "reply_markup": {},
     })
 
+def format_interval_minutes(total_minutes: int) -> str:
+    d_hours = total_minutes // 60
+    d_minutes = total_minutes % 60
+    if d_hours >= 24:
+        return f"{d_hours // 24} дн."
+    elif d_hours > 0:
+        return f"{d_hours} год {d_minutes} хв"
+    else:
+        return f"{d_minutes} хв"
+
 
 async def handle_stats_country_selected(chat_id: int, country_code: str) -> None:
     logger.info("handle_stats_country_selected | chat_id=%s country=%s", chat_id, country_code)
@@ -514,12 +524,11 @@ async def handle_stats_direction_selected(
 
     checkpoint_ids = list(country["checkpoints"].keys())
     try:
-        result = await get_supabase().table("time_stat") \
+        result = await get_supabase().table("checkpoint_status") \
             .select("*") \
             .in_("checkpoint_id", checkpoint_ids) \
             .eq("direction", direction) \
-            .order("recorded_at", desc=True) \
-            .limit(50) \
+            .eq("transport_type", "car") \
             .execute()
         stats_data = result.data or []
     except Exception:
@@ -533,8 +542,7 @@ async def handle_stats_direction_selected(
     latest_stats = {}
     for row in stats_data:
         cp_id = row["checkpoint_id"]
-        if cp_id not in latest_stats:
-            latest_stats[cp_id] = row
+        latest_stats[cp_id] = row
 
     direction_str = "Виїзд з України 🇪🇺" if direction == "OUTBOUND" else "В'їзд в Україну 🇺🇦"
     lines = [
@@ -552,35 +560,33 @@ async def handle_stats_direction_selected(
             no_stats.append((cp_id, cp_name))
 
     # Sort checkpoints by the most recently updated to help users find the "best" info first
-    has_stats.sort(key=lambda x: x[2]["recorded_at"], reverse=True)
+    has_stats.sort(key=lambda x: x[2]["updated_at"], reverse=True)
 
     for cp_id, cp_name, row in has_stats:
         # Safely parse Supabase timestamp
-        recorded_at_str = row["recorded_at"].replace("Z", "+00:00")
-        recorded_at = datetime.fromisoformat(recorded_at_str)
+        updated_at_str = row["updated_at"].replace("Z", "+00:00")
+        updated_at = datetime.fromisoformat(updated_at_str)
 
-        diff = now - recorded_at
-        hours = int(diff.total_seconds() // 3600)
-        minutes = int((diff.total_seconds() % 3600) // 60)
+        diff = now - updated_at
+        total_minutes = int(diff.total_seconds() // 60)
+        time_ago = f"{format_interval_minutes(total_minutes)} тому"
 
-        if hours >= 24:
-            time_ago = f"{hours // 24} дн. тому"
-        elif hours > 0:
-            time_ago = f"{hours} год {minutes} хв тому"
-        else:
-            time_ago = f"{minutes} хв тому"
-
-        comment = row.get("comment") or ""
-        dur = row.get("duration_minutes")
-        dur_str = f" (~{dur} хв)" if dur else ""
+        dur = row.get("avg_duration_minutes")
+        dur_str = f" (~{format_interval_minutes(int(dur))})" if dur is not None else ""
 
         icon = "🔹"
-        if "🛑" in comment:
+        if row.get("is_jammed"):
             icon = "🛑"
-        elif "⚠️" in comment:
+        elif row.get("is_warning"):
             icon = "⚠️"
 
-        lines.append(f"{icon} <b>{cp_name}</b>{dur_str}\n💬 {comment}\n🕒 <i>Оновлено: {time_ago}</i>\n")
+        data_source = row.get("data_source", "UNKNOWN")
+        if data_source == "ACTUAL":
+            ds_text = f"(на основі {row.get('reports_count', 0)} реальних звітів)"
+        else:
+            ds_text = "(на основі аналізу публічних даних)"
+
+        lines.append(f"{icon} <b>{cp_name}</b>{dur_str}\n🕒 <i>Оновлено: {time_ago} {ds_text}</i>\n")
 
     for cp_id, cp_name in no_stats:
         lines.append(f"🔹 <b>{cp_name}</b>\n🤷 Немає свіжих даних\n")
