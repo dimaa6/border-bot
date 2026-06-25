@@ -26,6 +26,7 @@ CREATE TABLE public.time_stat (
     cars_queue_size  INTEGER,
     duration_minutes INTEGER,
     comment TEXT,
+    extracted_at TIMESTAMPTZ,
     recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_manual BOOLEAN NOT NULL DEFAULT FALSE,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb
