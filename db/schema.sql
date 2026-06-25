@@ -48,3 +48,17 @@ CREATE TABLE checkpoint_scraper_config (
 
 -- Indexing for execution loops
 CREATE INDEX IF NOT EXISTS idx_active_checkpoints ON checkpoint_scraper_config (active);
+
+-- Create the consolidated status table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.checkpoint_status (
+    checkpoint_id TEXT NOT NULL,
+    direction TEXT NOT NULL,
+    transport_type TEXT NOT NULL,
+    avg_duration_minutes INTEGER NOT NULL,
+    reports_count INTEGER NOT NULL,
+    data_source TEXT NOT NULL,
+    is_warning BOOLEAN NOT NULL DEFAULT FALSE,
+    is_jammed BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (checkpoint_id, direction, transport_type)
+);
