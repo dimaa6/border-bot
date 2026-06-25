@@ -1,0 +1,1861 @@
+{
+    "ok": true,
+    "api_version": "v1",
+    "product": "checkpoints",
+    "attribution": "Data by nakordoni.eu",
+    "data": {
+        "checkpoints": [
+            {
+                "ppid": "id_3",
+                "name": "Ustyluh",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_5",
+                "name": "Uhryniv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_8",
+                "name": "Rava-Ruska",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_16",
+                "name": "Shehyni",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_17",
+                "name": "Shehyni",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_18",
+                "name": "Nyzhankovychi",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 14,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_19",
+                "name": "Smilnytsia",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_20",
+                "name": "Smilnytsia",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_22",
+                "name": "Malyi Bereznii",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_23",
+                "name": "Malyi Bereznii",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_24",
+                "name": "Uzhhorod",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_25",
+                "name": "Uzhhorod",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_26",
+                "name": "Mali Selmentsi",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_27",
+                "name": "Chop (Tysa)",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_28",
+                "name": "Chop (Tysa)",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_29",
+                "name": "Dzvinkove",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_30",
+                "name": "Dzvinkove",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_31",
+                "name": "Kosyno",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_32",
+                "name": "Kosyno",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_33",
+                "name": "Luzhanka",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_34",
+                "name": "Luzhanka",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_35",
+                "name": "Vilok",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_36",
+                "name": "Vilok",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_37",
+                "name": "Diakove",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_38",
+                "name": "Solotvyno",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_39",
+                "name": "Solotvyno",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_40",
+                "name": "Porubne",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_41",
+                "name": "Porubne",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_42",
+                "name": "Porubne",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_43",
+                "name": "Krasnoilsk",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_44",
+                "name": "Krasnoilsk",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_45",
+                "name": "Diakivtsi",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_46",
+                "name": "Diakivtsi",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_47",
+                "name": "Mamalyha",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_48",
+                "name": "Mamalyha",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_49",
+                "name": "Mamalyha",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_50",
+                "name": "Kelmentsi",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_51",
+                "name": "Kelmentsi",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_52",
+                "name": "Kelmentsi",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_53",
+                "name": "Rososhany",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_54",
+                "name": "Rososhany",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_55",
+                "name": "Rososhany",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_56",
+                "name": "Sokyriany",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_57",
+                "name": "Sokyriany",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_58",
+                "name": "Sokyriany",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_59",
+                "name": "Yagodyn",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_68",
+                "name": "Ustyluh",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_71",
+                "name": "Dorohusk",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_75",
+                "name": "Zosyn",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_76",
+                "name": "Zosyn",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_77",
+                "name": "Zosyn",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_78",
+                "name": "Dolgobychuv",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_79",
+                "name": "Dolgobychuv",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_80",
+                "name": "Dolgobychuv",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_81",
+                "name": "Dolgobychuv",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_83",
+                "name": "Khrebenne",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_84",
+                "name": "Khrebenne",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_85",
+                "name": "Khrebenne",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_86",
+                "name": "Budomezh",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 9,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_87",
+                "name": "Budomezh",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_88",
+                "name": "Budomezh",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_89",
+                "name": "Budomezh",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_90",
+                "name": "Korchova",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_91",
+                "name": "Korchova",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_92",
+                "name": "Korchova",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_93",
+                "name": "Korchova",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_94",
+                "name": "Medyka",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_95",
+                "name": "Medyka",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_96",
+                "name": "Medyka",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_97",
+                "name": "Medyka",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_98",
+                "name": "Krosstsenko",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 9,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_99",
+                "name": "Krosstsenko",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_100",
+                "name": "Krosstsenko",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_101",
+                "name": "Krosstsenko",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_2",
+                "name": "Ustyluh",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_4",
+                "name": "Uhryniv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_7",
+                "name": "Rava-Ruska",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_10",
+                "name": "Hrushiv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_11",
+                "name": "Hrushiv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_13",
+                "name": "Krakivets",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_14",
+                "name": "Krakivets",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_15",
+                "name": "Shehyni",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_102",
+                "name": "Uhryniv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_103",
+                "name": "Uhryniv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_105",
+                "name": "Rava-Ruska",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_106",
+                "name": "Rava-Ruska",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_108",
+                "name": "Hrushiv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 9,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_109",
+                "name": "Hrushiv",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_111",
+                "name": "Krakivets",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_112",
+                "name": "Krakivets",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_113",
+                "name": "Medyka",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_114",
+                "name": "Shehyni",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_115",
+                "name": "Shehyni",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_116",
+                "name": "Malhowice",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 14,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_118",
+                "name": "Smilnytsia",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 9,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_119",
+                "name": "Smilnytsia",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_120",
+                "name": "Ubla",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_121",
+                "name": "Ubla",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_122",
+                "name": "Vyshne-Nemetske",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_123",
+                "name": "Vyshne-Nemetske",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_124",
+                "name": "Velke Slemence (and cyclists)",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_125",
+                "name": "Zahony",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_126",
+                "name": "Zahony",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_127",
+                "name": "Lonya",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_128",
+                "name": "Lonya",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_129",
+                "name": "Barabash",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_130",
+                "name": "Barabash",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_131",
+                "name": "Beregshuran",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_132",
+                "name": "Beregshuran",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_133",
+                "name": "Tisabec",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_134",
+                "name": "Tisabec",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_135",
+                "name": "Halmeu",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_136",
+                "name": "Sighetu Marmatiei",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_137",
+                "name": "Sighetu Marmatiei",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_138",
+                "name": "Siret",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_139",
+                "name": "Siret",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_140",
+                "name": "Siret",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_141",
+                "name": "Vicovu de Sus",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_142",
+                "name": "Vicovu de Sus",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_143",
+                "name": "Rakovets",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_144",
+                "name": "Rakovets",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_145",
+                "name": "Kriva",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_146",
+                "name": "Kriva",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_147",
+                "name": "Kriva",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_148",
+                "name": "Larga",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_149",
+                "name": "Larga",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_150",
+                "name": "Larga",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_151",
+                "name": "Brichen",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_152",
+                "name": "Brichen",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_153",
+                "name": "Brichen",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_154",
+                "name": "Oknitsa",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_155",
+                "name": "Oknitsa",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_156",
+                "name": "Oknitsa",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_157",
+                "name": "Krasnoilsk",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_165",
+                "name": "Mohyliv-Podilskyi",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_166",
+                "name": "Otacz",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_225",
+                "name": "Luzhanka",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_226",
+                "name": "Beregshuran",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_227",
+                "name": "Mohyliv-Podilskyi",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_228",
+                "name": "Otacz",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_229",
+                "name": "Vicovu de Sus",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_230",
+                "name": "Orlivka",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 10,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_231",
+                "name": "Isaccea",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 10,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_232",
+                "name": "Bronnitsa",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_233",
+                "name": "Unguri",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_234",
+                "name": "Bronnitsa",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 9,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_235",
+                "name": "Unguri",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 9,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_268",
+                "name": "Palanka",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_269",
+                "name": "Mayaky — Udobne",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_60",
+                "name": "Malyi Bereznii",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 14,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_159",
+                "name": "Ubla",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 14,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_251",
+                "name": "Diakove",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_277",
+                "name": "Halmeu",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_282",
+                "name": "Tudora",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_283",
+                "name": "Starokozache",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_344",
+                "name": "Nyzhankovychi",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_345",
+                "name": "Malhowice",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_346",
+                "name": "Nyzhankovychi",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_347",
+                "name": "Malhowice",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_348",
+                "name": "Nyzhankovychi",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 5,
+                "timezone": "Europe/Kiev",
+                "status": 1
+            },
+            {
+                "ppid": "id_349",
+                "name": "Malhowice",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 5,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_64",
+                "name": "Yagodyn",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_67",
+                "name": "Ustyluh",
+                "origin": 1,
+                "destination": 2,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_70",
+                "name": "Dorohusk",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_74",
+                "name": "Zosyn",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_82",
+                "name": "Khrebenne",
+                "origin": 2,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Warsaw",
+                "status": 1
+            },
+            {
+                "ppid": "id_158",
+                "name": "Vyshne-Nemetske",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_178",
+                "name": "Luzhanka",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_179",
+                "name": "Luzhanka",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_266",
+                "name": "Chop (Tysa)",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_267",
+                "name": "Zahony",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Bratislava",
+                "status": 1
+            },
+            {
+                "ppid": "id_350",
+                "name": "Uzhhorod",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_351",
+                "name": "Porubne",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_352",
+                "name": "Siret",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_353",
+                "name": "Diakove",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_354",
+                "name": "Halmeu",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_355",
+                "name": "Mohyliv-Podilskyi",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_356",
+                "name": "Otacz",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_187",
+                "name": "Reni",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_357",
+                "name": "Dzhurzhuleshty",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_358",
+                "name": "Dzhurzhuleshty",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_359",
+                "name": "Reni",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_360",
+                "name": "Mamalyha",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 8,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_361",
+                "name": "Kriva",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_184",
+                "name": "Tabaky",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_364",
+                "name": "Myrne",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_363",
+                "name": "Myrne",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 8,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_380",
+                "name": "Velyka Palad",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_381",
+                "name": "Velyka Palad",
+                "origin": 1,
+                "destination": 4,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_382",
+                "name": "Nodyhodosh",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_383",
+                "name": "Nodyhodosh",
+                "origin": 4,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Budapest",
+                "status": 1
+            },
+            {
+                "ppid": "id_412",
+                "name": "Palanka",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_413",
+                "name": "Mayaky — Udobne",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_414",
+                "name": "Starokozache",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 6,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_415",
+                "name": "Tudora",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 6,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_434",
+                "name": "Dolynske",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_435",
+                "name": "Cișmichioi",
+                "origin": 6,
+                "destination": 1,
+                "crossing_type": 4,
+                "timezone": "Europe/Chisinau",
+                "status": 1
+            },
+            {
+                "ppid": "id_436",
+                "name": "Orlivka",
+                "origin": 1,
+                "destination": 5,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_437",
+                "name": "Isaccea",
+                "origin": 5,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Bucharest",
+                "status": 1
+            },
+            {
+                "ppid": "id_620",
+                "name": "Domanovo",
+                "origin": 1,
+                "destination": 7,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_621",
+                "name": "Mokrany",
+                "origin": 7,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_622",
+                "name": "Uzhhorod",
+                "origin": 1,
+                "destination": 3,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_623",
+                "name": "Vyšné Nemecké",
+                "origin": 3,
+                "destination": 1,
+                "crossing_type": 7,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_683",
+                "name": "Novi Troiany - Chadyr-Lunga",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            },
+            {
+                "ppid": "id_684",
+                "name": "Serpneve 1 - Basarabeasca",
+                "origin": 1,
+                "destination": 6,
+                "crossing_type": 4,
+                "timezone": "Europe/Kyiv",
+                "status": 1
+            }
+        ],
+        "count": 205
+    },
+    "usage": {
+        "limit": 1000,
+        "used": 2,
+        "reset": "2026-06-18T00:00:00Z"
+    }
+}
