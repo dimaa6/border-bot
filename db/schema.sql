@@ -36,6 +36,7 @@ CREATE TABLE public.time_stat (
 CREATE TABLE checkpoint_scraper_config (
     checkpoint_id TEXT PRIMARY KEY,                       -- Your exact bot codes (e.g., 'PL_SHEHYNI', 'PL_USTYLUH')
     display_name TEXT NOT NULL,                           -- Friendly Ukrainian name for prompts (e.g., 'Шегині', 'Устилуг')
+    foreign_name TEXT NOT NULL,                           -- Friendly Ukrainian name for other side (e.g., 'Медика')
     telegram_handle TEXT NOT NULL,                        -- Public group username (e.g., 'ustilug_zosin_chat')
     telegram_chat_id BIGINT,                              -- 64-bit Telegram ID (handles negative values safely)
     lookback_hours INT NOT NULL DEFAULT 3,                -- Configurable context window per checkpoint
