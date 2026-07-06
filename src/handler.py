@@ -20,6 +20,9 @@ from manual_stats import (
     handle_admin_direction_selected,
     handle_admin_reply
 )
+from constants import *
+from db_helpers import save_crossing_and_cleanup
+from ui_helpers import send_default_main_menu, send_db_error_message
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -27,50 +30,6 @@ logger = logging.getLogger(__name__)
 
 EXPECTED_SECRET = os.environ.get("TELEGRAM_SECRET_TOKEN")
 
-# ---------------------------------------------------------------------------
-# State constants
-# ---------------------------------------------------------------------------
-
-STATE_IDLE = "IDLE"
-STATE_IN_QUEUE = "IN_QUEUE"
-
-# ---------------------------------------------------------------------------
-# Text command constants
-# ---------------------------------------------------------------------------
-GREETINGS_PROMPT_INTRO = (
-    "<b>Вітаємо!</b>\n\n"
-    "Цей бот створено, щоб ми разом могли бачити реальний час очікування у пунктах пропуску та оптимально планувати поїздки.\n\n"
-    "📢 <b>Важливе оголошення для перших користувачів:</b>\n"
-    "Зараз ми запускаємо відкрите бета-тестування. Статистика перетинів поки порожня — і саме ви можете допомогти її наповнити! "
-    "Що більше реальних поїздок ми зафіксуємо, то точнішими будуть прогнози для кожного з нас.\n\n"
-    "<b>Як допомогти спільноті прямо зараз?</b>\n"
-    "Коли ви будете під'їжджати до кордону, просто запустіть моніторинг у боті. "
-    "Натискайте кнопку \"Все ще стою\", поки чекаєте, і обов'язково натисніть \"Я проїхав!\", коли перетнете лінію.\n\n"
-    "Кожна ваша хвилина в черзі перетвориться на корисну статистику для наступних водіїв!\n\n"
-)
-GREETINGS_PROMPT_SHORT = (
-    "Натисніть <b>«🚗 Почати перетин»</b> у момент, коли ви "
-    "реально встали в чергу, щоб зафіксувати точний час початку очікування."
-)
-GREETINGS_PROMPT = GREETINGS_PROMPT_INTRO + GREETINGS_PROMPT_SHORT
-CMD_START_CROSSING = "🚗 Почати перетин"
-CMD_CROSSED = "✅ Я проїхав!"
-CMD_STILL_WAITING = "⏳ Все ще стою"
-CMD_CANCEL = "❌ Скасувати"
-CMD_STATS = "📊 Статистика"
-CMD_INFO = "ℹ️ Інформація"
-
-MIN_CROSSING_INTERVAL_MINUTES = 120
-
-STILL_WAITING_RESPONSES = [
-    "Дякую за точність! Завдяки твоїй пильності інші водії зараз бачать реальну картину на кордоні. Тримаємось! 🤝",
-    "Супер, статус оновлено! Дякую, що не забуваєш відмічатися. Залізного терпіння тобі, черга рано чи пізно закінчиться! ☕",
-    "Прийнято! Статус оновлено. Дякую за твою витримку та пунктуальність! 🚗",
-]
-
-ERROR_DB_UPDATE = "⚠️ Помилка оновлення. Спробуйте ще раз."
-ERROR_DB_SAVE = "⚠️ Помилка збереження даних. Спробуйте ще раз."
-ERROR_DB_CANCEL = "⚠️ Помилка скасування. Спробуйте ще раз."
 
 # ---------------------------------------------------------------------------
 # Telegram API wrapper
@@ -179,7 +138,7 @@ async def handle_crossed(chat_id: int) -> None:
 
         if not session:
             logger.warning("handle_crossed | no active session found | chat_id=%s", chat_id)
-            await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_default_main_menu(chat_id)
             return
 
         now = datetime.now(timezone.utc)
@@ -189,7 +148,7 @@ async def handle_crossed(chat_id: int) -> None:
         if duration_seconds < 180:
             logger.info("handle_crossed | crossing too fast (spam) | chat_id=%s duration_seconds=%s", chat_id, duration_seconds)
             await delete_session(chat_id)
-            await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_default_main_menu(chat_id)
             return
 
         direction = session["direction"]
@@ -210,25 +169,21 @@ async def handle_crossed(chat_id: int) -> None:
             })
             return
 
-        result = await get_supabase().table("border_crossings").insert({
-            "chat_id":          chat_id,
-            "checkpoint_id":    session["checkpoint_id"],
-            "direction":        session["direction"],
-            "started_at":       session["started_at"],
-            "completed_at":     now.isoformat(),
-            "duration_seconds": duration_seconds,
-        }).execute()
-        crossing_id = result.data[0]["id"]
-
-        await delete_session(chat_id)
-        logger.info("handle_crossed | session deleted | chat_id=%s duration_seconds=%s", chat_id, duration_seconds)
+        crossing_id = await save_crossing_and_cleanup(
+            chat_id,
+            session["checkpoint_id"],
+            session["direction"],
+            session["started_at"],
+            now.isoformat(),
+            duration_seconds
+        )
+        if not crossing_id:
+            await send_db_error_message(chat_id, ERROR_DB_SAVE)
+            return
 
     except Exception:
         logger.exception("handle_crossed | DB operation failed | chat_id=%s", chat_id)
-        await send_telegram_request("sendMessage", {
-            "chat_id": chat_id,
-            "text": ERROR_DB_SAVE,
-        })
+        await send_db_error_message(chat_id, ERROR_DB_SAVE)
         return
 
     hours, remainder = divmod(duration_seconds, 3600)
@@ -255,7 +210,7 @@ async def handle_crossed(chat_id: int) -> None:
             ],
         ]},
     })
-    await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    await send_default_main_menu(chat_id)
 
 
 async def handle_still_waiting(
@@ -306,7 +261,7 @@ async def handle_cancel_queue(chat_id: int) -> None:
             "text": ERROR_DB_CANCEL,
         })
         return
-    await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    await send_default_main_menu(chat_id)
 
 
 async def handle_active_queue_input(chat_id: int, text: str) -> None:
@@ -350,7 +305,7 @@ async def handle_inline_cancel(chat_id: int, message_id: int) -> None:
         "text": "❌ Введення скасовано.",
         "reply_markup": {},
     })
-    await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+    await send_default_main_menu(chat_id)
 
 
 async def handle_country_selected(chat_id: int, country_code: str, prefix: str = "checkpoint") -> None:
@@ -410,10 +365,7 @@ async def handle_direction_selection(
         logger.info("handle_direction_selection | session upserted | chat_id=%s", chat_id)
     except Exception:
         logger.exception("handle_direction_selection | DB upsert failed | chat_id=%s", chat_id)
-        await send_telegram_request("sendMessage", {
-            "chat_id": chat_id,
-            "text": ERROR_DB_SAVE,
-        })
+        await send_db_error_message(chat_id, ERROR_DB_SAVE)
         return
 
     checkpoint_name = None
@@ -474,7 +426,7 @@ async def handle_fast_cross(
                 "text": "Дякуємо, дані не збережено.",
                 "reply_markup": {}
             })
-            await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_default_main_menu(chat_id)
             return
 
         elif sub_action == "empty":
@@ -483,17 +435,16 @@ async def handle_fast_cross(
             started_at = datetime.fromisoformat(session["started_at"])
             duration_seconds = int((completed_at - started_at).total_seconds())
 
-            result = await get_supabase().table("border_crossings").insert({
-                "chat_id":          chat_id,
-                "checkpoint_id":    session["checkpoint_id"],
-                "direction":        session["direction"],
-                "started_at":       session["started_at"],
-                "completed_at":     completed_at.isoformat(),
-                "duration_seconds": duration_seconds,
-            }).execute()
-            crossing_id = result.data[0]["id"]
-
-            await delete_session(chat_id)
+            crossing_id = await save_crossing_and_cleanup(
+                chat_id,
+                session["checkpoint_id"],
+                session["direction"],
+                session["started_at"],
+                completed_at.isoformat(),
+                duration_seconds
+            )
+            if not crossing_id:
+                raise Exception("save_crossing_and_cleanup failed")
 
             await send_telegram_request("editMessageText", {
                 "chat_id": chat_id,
@@ -501,7 +452,7 @@ async def handle_fast_cross(
                 "text": "✅ Дані успішно збережено до бази!",
                 "reply_markup": {}
             })
-            await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_default_main_menu(chat_id)
             return
 
         elif sub_action == "adj":
@@ -531,17 +482,16 @@ async def handle_fast_cross(
                 completed_at = datetime.fromisoformat(completed_at_str)
                 duration_seconds = int((completed_at - started_at).total_seconds())
 
-                result = await get_supabase().table("border_crossings").insert({
-                    "chat_id":          chat_id,
-                    "checkpoint_id":    session["checkpoint_id"],
-                    "direction":        session["direction"],
-                    "started_at":       started_at.isoformat(),
-                    "completed_at":     completed_at.isoformat(),
-                    "duration_seconds": duration_seconds,
-                }).execute()
-                crossing_id = result.data[0]["id"]
-
-                await delete_session(chat_id)
+                crossing_id = await save_crossing_and_cleanup(
+                    chat_id,
+                    session["checkpoint_id"],
+                    session["direction"],
+                    started_at.isoformat(),
+                    completed_at.isoformat(),
+                    duration_seconds
+                )
+                if not crossing_id:
+                    raise Exception("save_crossing_and_cleanup failed")
 
                 await send_telegram_request("editMessageText", {
                     "chat_id": chat_id,
@@ -549,7 +499,7 @@ async def handle_fast_cross(
                     "text": "✅ Час відкориговано та збережено!",
                     "reply_markup": {}
                 })
-                await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+                await send_default_main_menu(chat_id)
                 return
 
         elif sub_action == "ask_custom":
@@ -605,30 +555,26 @@ async def handle_fast_cross_custom_reply(chat_id: int, text: str) -> None:
         completed_at = datetime.fromisoformat(completed_at_str)
         duration_seconds = int((completed_at - started_at).total_seconds())
 
-        result = await get_supabase().table("border_crossings").insert({
-            "chat_id":          chat_id,
-            "checkpoint_id":    session["checkpoint_id"],
-            "direction":        session["direction"],
-            "started_at":       started_at.isoformat(),
-            "completed_at":     completed_at.isoformat(),
-            "duration_seconds": duration_seconds,
-        }).execute()
-        crossing_id = result.data[0]["id"]
-
-        await delete_session(chat_id)
+        crossing_id = await save_crossing_and_cleanup(
+            chat_id,
+            session["checkpoint_id"],
+            session["direction"],
+            started_at.isoformat(),
+            completed_at.isoformat(),
+            duration_seconds
+        )
+        if not crossing_id:
+            raise Exception("save_crossing_and_cleanup failed")
 
         await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": "✅ Час відкориговано та збережено!"
         })
-        await send_main_menu(chat_id, GREETINGS_PROMPT_SHORT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_default_main_menu(chat_id)
 
     except Exception:
         logger.exception("handle_fast_cross_custom_reply | DB operation failed | chat_id=%s", chat_id)
-        await send_telegram_request("sendMessage", {
-            "chat_id": chat_id,
-            "text": ERROR_DB_SAVE,
-        })
+        await send_db_error_message(chat_id, ERROR_DB_SAVE)
 
 
 async def handle_adjust_crossing(
