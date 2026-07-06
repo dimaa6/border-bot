@@ -114,6 +114,13 @@ async def delete_session(chat_id: int) -> None:
     logger.debug("delete_session | chat_id=%s", chat_id)
 
 
+async def update_session_completed_at(chat_id: int, timestamp_iso: str) -> None:
+    """Set completed_at for an existing session."""
+    r = get_redis()
+    await r.hset(_session_key(chat_id), "completed_at", timestamp_iso)
+    logger.debug("update_session_completed_at | chat_id=%s", chat_id)
+
+
 from typing import AsyncGenerator
 
 async def iter_potentially_stale_sessions(cutoff_ts: float) -> AsyncGenerator[dict, None]:
