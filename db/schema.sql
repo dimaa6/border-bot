@@ -64,3 +64,52 @@ CREATE TABLE IF NOT EXISTS public.checkpoint_status (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (checkpoint_id, direction, transport_type)
 );
+
+-- Create an ENUM type for the movement_state to enforce the allowed values
+CREATE TYPE movement_state_enum AS ENUM ('normal', 'slowdown', 'standstill', 'accelerated');
+
+-- Reports Main Table: directional_sentiment
+CREATE TABLE directional_sentiment (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    movement_state movement_state_enum NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    checkpoint_id TEXT NOT NULL,
+    direction TEXT NOT NULL CHECK (direction IN ('INBOUND', 'OUTBOUND')),
+    transport_type TEXT NOT NULL DEFAULT 'car' CHECK (transport_type IN ('car', 'bus', 'truck', 'van'))
+);
+CREATE INDEX idx_directional_sentiment_created_at ON directional_sentiment(created_at);
+
+-- Reports Child Table 1
+CREATE TABLE time_report (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    directional_sentiment_id UUID NOT NULL,
+    reported_time_minutes INTEGER NOT NULL,
+    source_message_id BIGINT NOT NULL,
+    reported_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Foreign key linking back to the main table
+    CONSTRAINT fk_time_report_sentiment 
+        FOREIGN KEY (directional_sentiment_id) 
+        REFERENCES directional_sentiment (id)
+        ON DELETE CASCADE
+);
+CREATE INDEX idx_time_report_sentiment_id ON time_report(directional_sentiment_id);
+
+-- Reports Child Table 2
+CREATE TABLE queue_report (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    directional_sentiment_id UUID NOT NULL,
+    reported_queue_length INTEGER, -- Nullable since it can be None/null
+    source_message_id BIGINT NOT NULL,
+    is_approximate BOOLEAN DEFAULT FALSE NOT NULL,
+    landmark_mentioned TEXT,
+    segment_mentioned TEXT,
+    reported_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- Foreign key linking back to the main table
+    CONSTRAINT fk_queue_report_sentiment 
+        FOREIGN KEY (directional_sentiment_id) 
+        REFERENCES directional_sentiment (id)
+        ON DELETE CASCADE
+);
+CREATE INDEX idx_queue_report_sentiment_id ON queue_report(directional_sentiment_id);
