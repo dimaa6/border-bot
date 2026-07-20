@@ -3,6 +3,7 @@ import os
 
 import httpx
 from supabase import acreate_client, AsyncClient
+from constants import CMD_START_CROSSING, CMD_PLAN_ROUTE, CMD_STATS, CMD_INFO
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +62,6 @@ async def send_telegram_request(method: str, payload: dict) -> dict | None:
 async def send_main_menu(
     chat_id: int,
     text_prompt: str,
-    cmd_start_crossing: str,
-    cmd_stats: str,
-    cmd_info: str,
 ) -> None:
     logger.info("send_main_menu | chat_id=%s", chat_id)
     await send_telegram_request("sendMessage", {
@@ -75,8 +73,9 @@ async def send_main_menu(
         },
         "reply_markup": {
             "keyboard": [
-                [{"text": cmd_start_crossing}],
-                [{"text": cmd_stats}, {"text": cmd_info}],
+                [{"text": CMD_START_CROSSING}],
+                [{"text": CMD_PLAN_ROUTE}],
+                [{"text": CMD_STATS}, {"text": CMD_INFO}],
             ],
             "resize_keyboard": True,
             "one_time_keyboard": False,

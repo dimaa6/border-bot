@@ -86,7 +86,9 @@ BEGIN
     )
     -- Upsert the compiled results straight into our dedicated lookup table
     INSERT INTO public.checkpoint_status (checkpoint_id, direction, transport_type, avg_duration_minutes, reports_count, data_source, updated_at, is_warning, is_jammed)
-    SELECT checkpoint_id, direction, transport_type, avg_time, r_count, data_source, source_updated_at, is_warning, is_jammed
+    SELECT checkpoint_id, direction, transport_type, avg_time, r_count, data_source, source_updated_at, 
+           COALESCE(is_warning, FALSE), 
+           COALESCE(is_jammed, FALSE)
     FROM filtered_results
     ON CONFLICT (checkpoint_id, direction, transport_type) 
     DO UPDATE SET 
@@ -94,8 +96,8 @@ BEGIN
         reports_count = EXCLUDED.reports_count,
         data_source = EXCLUDED.data_source,
         updated_at = EXCLUDED.updated_at,
-        is_warning = COALESCE(EXCLUDED.is_warning, checkpoint_status.is_warning),
-        is_jammed = COALESCE(EXCLUDED.is_jammed, checkpoint_status.is_jammed);
+        is_warning = CASE WHEN EXCLUDED.data_source = 'ACTUAL' THEN checkpoint_status.is_warning ELSE EXCLUDED.is_warning END,
+        is_jammed = CASE WHEN EXCLUDED.data_source = 'ACTUAL' THEN checkpoint_status.is_jammed ELSE EXCLUDED.is_jammed END;
 END;
 $$ LANGUAGE plpgsql;
 
