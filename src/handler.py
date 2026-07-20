@@ -23,6 +23,7 @@ from manual_stats import (
 from constants import *
 from db_helpers import save_crossing_and_cleanup
 from ui_helpers import send_default_main_menu, send_db_error_message
+from distance_optimizer import handle_plan_route_cmd, handle_plan_callback
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
 
     if text == "/start":
         logger.info("Route: IDLE → /start | chat_id=%s", chat_id)
-        await send_main_menu(chat_id, GREETINGS_PROMPT, CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_main_menu(chat_id, GREETINGS_PROMPT)
     elif text == CMD_START_CROSSING:
         logger.info("Route: IDLE → start_crossing | chat_id=%s", chat_id)
         try:
@@ -88,7 +89,7 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
                 .execute()
             if result and result.data:
                 logger.info("Route: IDLE → start_crossing blocked | recent crossing found | chat_id=%s", chat_id)
-                await send_main_menu(chat_id, "Ви надто часто перетинаєте кордон, відпочиньте з дороги 😊", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+                await send_main_menu(chat_id, ERROR_TOO_FREQUENT_CROSSING)
                 return
         except Exception:
             logger.exception("Route: IDLE → start_crossing | DB check failed | chat_id=%s", chat_id)
@@ -98,33 +99,19 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
         if is_admin(chat_id):
             await handle_addstats_cmd(chat_id)
         else:
-            await send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+            await send_main_menu(chat_id, PROMPT_CHOOSE_ACTION)
     elif text == CMD_STATS:
         logger.info("Route: IDLE → stats | chat_id=%s", chat_id)
         await send_country_selection(chat_id, prefix="stats_country")
+    elif text == CMD_PLAN_ROUTE:
+        logger.info("Route: IDLE → plan route | chat_id=%s", chat_id)
+        await handle_plan_route_cmd(chat_id)
     elif text == CMD_INFO:
         logger.info("Route: IDLE → info | chat_id=%s", chat_id)
-        await send_main_menu(chat_id,
-            (
-                "📌 <b>Корисна інформація та спільнота</b>\n\n"
-                "Наш бот допомагає автоматично збирати та фіксувати час очікування, але для живого обговорення, "
-                "форс-мажорів чи додаткових питань обов'язково користуйтеся іншими ресурсами спільноти:\n\n"
-                "<a href=\"https://t.me/Ukrainians_border/94\">Актуальні новини на кордоні з Україною</a> — "
-                "Головний чат водіїв щодо пунктів пропуску через держкордон України. "
-                "Тут можна запитати поради в тих, хто зараз у дорозі.\n\n"
-                "<a href=\"https://t.me/evtravelua\">Подорожі на електромобілях</a> — "
-                "Якщо у вас вже є електромобіль або цікавитесь ним, приєднуйтесь до цього чату.\n\n"
-                "<a href=\"https://dpsu.gov.ua/uk\">Держприкордонслужба України</a> — "
-                "Офіційний сайт із загальними правилами перетину.\n\n"
-                "🤖 <b>Як працює цей бот?</b>\n"
-                "Бот працює на принципі взаємодопомоги. Ви фіксуєте свій час початку черги, періодично підтверджуєте присутність, "
-                "а коли проїжджаєте — тиснете «Я проїхав!». Ваші дані миттєво формують реальну статистику для наступних водіїв."
-            ),
-            CMD_START_CROSSING, CMD_STATS, CMD_INFO
-        )
+        await send_main_menu(chat_id, INFO_PROMPT)
     else:
         logger.info("Route: IDLE → unrecognised input | chat_id=%s text=%r", chat_id, text)
-        await send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_main_menu(chat_id, PROMPT_CHOOSE_ACTION)
 
 
 # ---------------------------------------------------------------------------
@@ -794,6 +781,10 @@ async def route_callback_query(
         logger.info("Route: callback → admin_start | chat_id=%s", chat_id)
         await handle_addstats_cmd(chat_id)
 
+    elif action.startswith("plan_"):
+        logger.info("Route: callback → plan route | chat_id=%s action=%s", chat_id, action)
+        await handle_plan_callback(chat_id, message_id, parts)
+
     elif action == "fast_cross" and len(parts) >= 2:
         logger.info("Route: callback → fast_cross | chat_id=%s sub_action=%s", chat_id, parts[1])
         await handle_fast_cross(chat_id, message_id, query_id, parts[1], parts)
@@ -818,7 +809,7 @@ async def route_callback_query(
             "text": "✅ Дані успішно збережено до бази!",
             "reply_markup": {}
         })
-        await send_main_menu(chat_id, "Оберіть дію:", CMD_START_CROSSING, CMD_STATS, CMD_INFO)
+        await send_main_menu(chat_id, PROMPT_CHOOSE_ACTION)
 
     else:
         logger.warning("route_callback_query | unrecognised action=%r chat_id=%s", action, chat_id)

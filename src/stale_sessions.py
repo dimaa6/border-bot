@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from clients import get_supabase, send_telegram_request, send_main_menu
 from redis_sessions import iter_potentially_stale_sessions, update_last_reminded, delete_session
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
-from handler import CMD_START_CROSSING, CMD_STATS, CMD_INFO, GREETINGS_PROMPT_SHORT
+from handler import GREETINGS_PROMPT_SHORT
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -54,9 +54,6 @@ async def _expire_session(session: dict) -> None:
     await send_main_menu(
         chat_id,
         GREETINGS_PROMPT_SHORT,
-        CMD_START_CROSSING,
-        CMD_STATS,
-        CMD_INFO,
     )
 
 
