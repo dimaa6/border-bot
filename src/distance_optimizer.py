@@ -99,6 +99,25 @@ async def get_checkpoint_wait_times(direction: str) -> dict:
         return {}
 
 
+async def get_checkpoint_telegram_handles() -> dict:
+    """Fetch telegram handles from checkpoint_scraper_config."""
+    try:
+        result = await get_supabase().table("checkpoint_scraper_config") \
+            .select("checkpoint_id, telegram_handle") \
+            .execute()
+        
+        handles = {}
+        for row in result.data or []:
+            db_id = row["checkpoint_id"]
+            if db_id in DB_TO_INTERNAL_CP and row.get("telegram_handle"):
+                cp_name = DB_TO_INTERNAL_CP[db_id]
+                handles[cp_name] = row["telegram_handle"]
+        return handles
+    except Exception:
+        logger.exception("Failed to fetch checkpoint telegram handles")
+        return {}
+
+
 async def handle_plan_route_cmd(chat_id: int):
     """Entry point for /plan_route -> choose country"""
     buttons = [
@@ -181,6 +200,7 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         })
 
         wait_times = await get_checkpoint_wait_times(direction)
+        handles = await get_checkpoint_telegram_handles()
         
         routes = []
         is_outbound = (direction == "OUTBOUND")
@@ -219,6 +239,13 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         
         for i, r in enumerate(best_routes, 1):
             cp_ua_name = CHECKPOINT_EN_TO_UA.get(r["checkpoint"], r["checkpoint"])
+            handle = handles.get(r["checkpoint"])
+            
+            if handle:
+                cp_display = f"<a href='https://t.me/{handle}'>{cp_ua_name}</a>"
+            else:
+                cp_display = cp_ua_name
+                
             total_str = format_minutes_to_str(r["total"])
             drive_str = format_minutes_to_str(r["dist_ua"] + r["dist_pl"])
             wait_str = format_minutes_to_str(r["wait_time"])
@@ -227,13 +254,17 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
                 wait_str = "немає свіжих даних (вважаємо 0)"
             
             lines.append(
-                f"<b>{i}. через {cp_ua_name}</b> — ⏱ <b>{total_str}</b>\n"
+                f"<b>{i}. через {cp_display}</b> — ⏱ <b>{total_str}</b>\n"
                 f"   🚗 Їзда: {drive_str}\n"
                 f"   🛂 Кордон: {wait_str}\n"
             )
             
+        lines.append("💡 Натисніть на назву пункту пропуску, щоб перейти в його чат.")
+            
         await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": "\n".join(lines),
-            "parse_mode": "HTML"
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+            "link_preview_options": {"is_disabled": True}
         })
