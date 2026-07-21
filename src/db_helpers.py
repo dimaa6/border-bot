@@ -35,3 +35,26 @@ async def save_crossing_and_cleanup(
     except Exception:
         logger.exception("save_crossing_and_cleanup | DB operation failed | chat_id=%s", chat_id)
         return None
+
+
+async def get_checkpoint_telegram_handles(checkpoint_ids: list[str] = None) -> dict:
+    """
+    Fetch telegram handles from checkpoint_scraper_config.
+    Returns a dict mapping checkpoint_id to telegram_handle.
+    """
+    try:
+        query = get_supabase().table("checkpoint_scraper_config").select("checkpoint_id, telegram_handle")
+        if checkpoint_ids:
+            query = query.in_("checkpoint_id", checkpoint_ids)
+            
+        result = await query.execute()
+        
+        handles = {
+            row["checkpoint_id"]: row["telegram_handle"] 
+            for row in result.data or [] 
+            if row.get("telegram_handle")
+        }
+        return handles
+    except Exception:
+        logger.exception("Failed to fetch checkpoint telegram handles")
+        return {}

@@ -21,7 +21,7 @@ from manual_stats import (
     handle_admin_reply
 )
 from constants import *
-from db_helpers import save_crossing_and_cleanup
+from db_helpers import save_crossing_and_cleanup, get_checkpoint_telegram_handles
 from ui_helpers import send_default_main_menu, send_db_error_message
 from distance_optimizer import handle_plan_route_cmd, handle_plan_callback
 
@@ -669,6 +669,8 @@ async def handle_stats_direction_selected(
             .eq("transport_type", "car") \
             .execute()
         stats_data = result.data or []
+        
+        handles = await get_checkpoint_telegram_handles(checkpoint_ids)
     except Exception:
         logger.exception("handle_stats_direction_selected | DB query failed")
         await send_telegram_request("sendMessage", {
@@ -701,6 +703,12 @@ async def handle_stats_direction_selected(
     has_stats.sort(key=lambda x: x[2]["updated_at"], reverse=True)
 
     for cp_id, cp_name, row in has_stats:
+        handle = handles.get(cp_id)
+        if handle:
+            cp_display = f"<a href='https://t.me/{handle}'>{cp_name}</a>"
+        else:
+            cp_display = cp_name
+
         # Safely parse Supabase timestamp
         updated_at_str = row["updated_at"].replace("Z", "+00:00")
         updated_at = datetime.fromisoformat(updated_at_str)
@@ -724,15 +732,24 @@ async def handle_stats_direction_selected(
         else:
             ds_text = "(на основі аналізу публічних даних)"
 
-        lines.append(f"{icon} <b>{cp_name}</b>{dur_str}\n🕒 <i>Оновлено: {time_ago} {ds_text}</i>\n")
+        lines.append(f"{icon} <b>{cp_display}</b>{dur_str}\n🕒 <i>Оновлено: {time_ago} {ds_text}</i>\n")
 
     for cp_id, cp_name in no_stats:
-        lines.append(f"🔹 <b>{cp_name}</b>\n🤷 Немає свіжих даних\n")
+        handle = handles.get(cp_id)
+        if handle:
+            cp_display = f"<a href='https://t.me/{handle}'>{cp_name}</a>"
+        else:
+            cp_display = cp_name
+        lines.append(f"🔹 <b>{cp_display}</b>\n🤷 Немає свіжих даних\n")
+
+    lines.append("💡 Натисніть на назву пункту пропуску, щоб перейти в його чат.")
 
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": "\n".join(lines),
-        "parse_mode": "HTML"
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+        "link_preview_options": {"is_disabled": True}
     })
 
 
