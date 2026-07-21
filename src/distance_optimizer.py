@@ -2,11 +2,12 @@ import logging
 from datetime import datetime, timezone
 from clients import get_supabase, send_telegram_request
 from constants import CMD_CANCEL
+from db_helpers import get_checkpoint_telegram_handles
 
 logger = logging.getLogger(__name__)
 
 # Internal lists used by the system (English keys)
-UKRAINIAN_CITIES = ["Lviv", "Lutsk", "Kovel", "Stryi"]
+UKRAINIAN_CITIES = ["Lviv", "Lutsk", "Kovel", "Stryi", "Brody"]
 POLISH_CITIES = ["Krakow", "Warsaw"]
 CHECKPOINTS = [
     "Ustyluh", "Krakivets", "Rava Ruska", "Shehyni", 
@@ -19,6 +20,7 @@ CITY_EN_TO_UA = {
     "Lutsk": "Луцьк",
     "Kovel": "Ковель",
     "Stryi": "Стрий",
+    "Brody": "Броди",
     "Krakow": "Краків",
     "Warsaw": "Варшава"
 }
@@ -44,6 +46,7 @@ DISTANCES_UA_TO_CP = {
     "Lutsk": {"Ustyluh": 76, "Krakivets": 192, "Rava Ruska": 146, "Shehyni": 215, "Uhryniv": 103, "Hrushiv": 187, "Nizhankovichi": 251, "Smilnytsia": 249},
     "Kovel": {"Ustyluh": 49, "Krakivets": 194, "Rava Ruska": 135, "Shehyni": 226, "Uhryniv": 84, "Hrushiv": 180, "Nizhankovichi": 267, "Smilnytsia": 265},
     "Stryi": {"Ustyluh": 205, "Krakivets": 117, "Rava Ruska": 147, "Shehyni": 110, "Uhryniv": 165, "Hrushiv": 124, "Nizhankovichi": 113, "Smilnytsia": 110},
+    "Brody": {"Ustyluh": 131, "Krakivets": 154, "Rava Ruska": 121, "Shehyni": 167, "Uhryniv": 93, "Hrushiv": 161, "Nizhankovichi": 202, "Smilnytsia": 200},
 }
 
 # Nested dictionary mapping: Checkpoint -> Polish City -> Drive time (minutes)
@@ -99,24 +102,6 @@ async def get_checkpoint_wait_times(direction: str) -> dict:
         return {}
 
 
-async def get_checkpoint_telegram_handles() -> dict:
-    """Fetch telegram handles from checkpoint_scraper_config."""
-    try:
-        result = await get_supabase().table("checkpoint_scraper_config") \
-            .select("checkpoint_id, telegram_handle") \
-            .execute()
-        
-        handles = {}
-        for row in result.data or []:
-            db_id = row["checkpoint_id"]
-            if db_id in DB_TO_INTERNAL_CP and row.get("telegram_handle"):
-                cp_name = DB_TO_INTERNAL_CP[db_id]
-                handles[cp_name] = row["telegram_handle"]
-        return handles
-    except Exception:
-        logger.exception("Failed to fetch checkpoint telegram handles")
-        return {}
-
 
 async def handle_plan_route_cmd(chat_id: int):
     """Entry point for /plan_route -> choose country"""
@@ -154,7 +139,7 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         
         prompt_text = "Оберіть ваше місто відправлення (Україна):" if is_outbound else "Оберіть ваше місто відправлення (Польща):"
         cities = UKRAINIAN_CITIES if is_outbound else POLISH_CITIES
-        
+
         buttons = []
         for city in cities:
             buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_orig:{direction}:{city}"}])
@@ -200,7 +185,12 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         })
 
         wait_times = await get_checkpoint_wait_times(direction)
-        handles = await get_checkpoint_telegram_handles()
+        raw_handles = await get_checkpoint_telegram_handles()
+        handles = {
+            DB_TO_INTERNAL_CP[db_id]: handle 
+            for db_id, handle in raw_handles.items() 
+            if db_id in DB_TO_INTERNAL_CP
+        }
         
         routes = []
         is_outbound = (direction == "OUTBOUND")

@@ -15,6 +15,10 @@ origins_ua = [
     {"latitude": 49.2486, "longitude": 23.8559},  # Stryi
 ]
 
+origin_ua_brody = [
+    {"latitude": 50.09622, "longitude": 25.17622}
+]
+
 destinations_ua = [
     {"latitude": 50.86069, "longitude": 24.15097},  # Checkpoint Ustyluh
     {"latitude": 49.94905, "longitude": 23.15331},  # Checkpoint Krakivets
@@ -42,7 +46,7 @@ destinations_pl = [
     {"latitude": 52.2286, "longitude": 21.00046},   # Warsaw
 ]
 
-origins = origins_ua
+origins = origin_ua_brody
 destinations = destinations_ua
 
 def fetch_duration_matrix():
