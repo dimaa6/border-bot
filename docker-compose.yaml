@@ -52,6 +52,25 @@ services:
     networks:
       - border_net
 
+  analytics-dashboard:
+    build:
+      context: ../border-bot-analytics
+      dockerfile: Dockerfile
+      args:
+        USER_ID: "${HOST_UID:-1000}"
+        GROUP_ID: "${HOST_GID:-1000}"
+    image: border-bot-analytics:latest
+    container_name: border-bot-analytics
+    profiles:
+      - analytics
+    env_file:
+      - ../border-bot-analytics/.env
+    ports:
+      - "127.0.0.1:5541:5541"
+    networks:
+      - border_net
+    restart: unless-stopped
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: border-bot-tunnel

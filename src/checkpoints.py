@@ -17,7 +17,7 @@ COUNTRIES_AND_CHECKPOINTS = {
         "checkpoints": {
             "SK_MALYI_BEREZNYI": "Малий Березний",
             "SK_UZHHOROD":       "Ужгород",
-            "SK_MALI_SELMENCI":  "Малі Селменці",
+#            "SK_MALI_SELMENCI":  "Малі Селменці",
         },
     },
     "RO": {
