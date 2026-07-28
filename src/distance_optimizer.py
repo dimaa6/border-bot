@@ -1,8 +1,14 @@
 import logging
 from datetime import datetime, timezone
 from clients import get_supabase, send_telegram_request
-from constants import CMD_CANCEL
+from constants import CMD_CANCEL, CMD_START_CROSSING
 from db_helpers import get_checkpoint_telegram_handles
+from redis_sessions import (
+    increment_plan_route_country_analytics,
+    increment_plan_route_direction_analytics,
+    increment_plan_route_city_analytics,
+    increment_plan_route_funnel_analytics,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +113,7 @@ async def handle_plan_route_cmd(chat_id: int):
     """Entry point for /plan_route -> choose country"""
     buttons = [
         [{"text": "Польща", "callback_data": "plan_country:PL"}],
-        [{"text": CMD_CANCEL, "callback_data": "cancel:flow"}]
+        [{"text": CMD_CANCEL, "callback_data": "cancel:plan_country"}]
     ]
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
@@ -121,7 +127,9 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
     action = parts[0]
 
     if action == "plan_country":
-        # country_code = parts[1] # only PL supported right now
+        country_code = parts[1] if len(parts) > 1 else "PL"
+        await increment_plan_route_country_analytics(country_code)
+        await increment_plan_route_funnel_analytics("step_1_country_selected")
         await send_telegram_request("editMessageText", {
             "chat_id": chat_id,
             "message_id": message_id,
@@ -129,13 +137,15 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
             "reply_markup": {"inline_keyboard": [
                 [{"text": "🇪🇺 Виїзд з України", "callback_data": "plan_dir:OUTBOUND"}],
                 [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": "plan_dir:INBOUND"}],
-                [{"text": CMD_CANCEL,              "callback_data": "cancel:flow"}],
+                [{"text": CMD_CANCEL,              "callback_data": "cancel:plan_direction"}],
             ]},
         })
 
     elif action == "plan_dir":
         direction = parts[1]
         is_outbound = (direction == "OUTBOUND")
+        await increment_plan_route_direction_analytics("PL", direction)
+        await increment_plan_route_funnel_analytics("step_2_direction_selected")
         
         prompt_text = "Оберіть ваше місто відправлення (Україна):" if is_outbound else "Оберіть ваше місто відправлення (Польща):"
         cities = UKRAINIAN_CITIES if is_outbound else POLISH_CITIES
@@ -143,7 +153,7 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         buttons = []
         for city in cities:
             buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_orig:{direction}:{city}"}])
-        buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
+        buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:plan_origin"}])
 
         await send_telegram_request("editMessageText", {
             "chat_id": chat_id,
@@ -156,6 +166,8 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         direction = parts[1]
         origin_city = parts[2]
         is_outbound = (direction == "OUTBOUND")
+        await increment_plan_route_city_analytics("origin", origin_city)
+        await increment_plan_route_funnel_analytics("step_3_origin_selected")
         
         prompt_text = "Оберіть ваше місто призначення (Польща):" if is_outbound else "Оберіть ваше місто призначення (Україна):"
         cities = POLISH_CITIES if is_outbound else UKRAINIAN_CITIES
@@ -163,7 +175,7 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         buttons = []
         for city in cities:
             buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_dest:{direction}:{origin_city}:{city}"}])
-        buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
+        buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:plan_destination"}])
 
         await send_telegram_request("editMessageText", {
             "chat_id": chat_id,
@@ -176,6 +188,8 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         direction = parts[1]
         origin_city = parts[2]
         destination_city = parts[3]
+        await increment_plan_route_city_analytics("destination", destination_city)
+        await increment_plan_route_funnel_analytics("step_4_completed")
         
         await send_telegram_request("editMessageText", {
             "chat_id": chat_id,
@@ -248,9 +262,10 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
                 f"   🚗 Їзда: {drive_str}\n"
                 f"   🛂 Кордон: {wait_str}\n"
             )
-            
-        lines.append("💡 Натисніть на назву пункту пропуску, щоб перейти в його чат.")
-            
+
+        lines.append(f"📊 Точність цих прогнозів залежить від вас! Натисніть <b>{CMD_START_CROSSING}</b>, коли будете перетинати кордон, щоб зафіксувати свій час — це займає 10 секунд і допомагає іншим водіям планувати маршрут точніше.")
+        lines.append("\n💡 Натисніть на назву пункту пропуску, щоб перейти в його чат.")
+
         await send_telegram_request("sendMessage", {
             "chat_id": chat_id,
             "text": "\n".join(lines),

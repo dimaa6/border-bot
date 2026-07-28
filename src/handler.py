@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timezone, timedelta
 
 from log_setup import configure_logging
-from clients import get_supabase, send_telegram_request, send_main_menu
+from clients import send_telegram_request, send_main_menu
 from redis_sessions import (
     session_exists,
     get_session,
@@ -12,6 +12,21 @@ from redis_sessions import (
     update_last_user_action,
     delete_session,
     update_session_completed_at,
+    increment_main_menu_analytics,
+    increment_crossing_country_analytics,
+    increment_checkpoint_analytics,
+    increment_direction_analytics,
+    increment_crossing_funnel_analytics,
+    increment_cancel_funnel_analytics,
+    increment_crossing_event_analytics,
+    increment_stats_country_analytics,
+    increment_stats_direction_analytics,
+    increment_stats_funnel_analytics,
+    increment_stats_cancel_funnel_analytics,
+    increment_info_analytics,
+    increment_plan_route_funnel_analytics,
+    increment_plan_route_cancel_funnel_analytics,
+    track_unique_user,
 )
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
 from manual_stats import (
@@ -21,7 +36,13 @@ from manual_stats import (
     handle_admin_reply
 )
 from constants import *
-from db_helpers import save_crossing_and_cleanup, get_checkpoint_telegram_handles
+from db_helpers import (
+    save_crossing_and_cleanup,
+    get_checkpoint_telegram_handles,
+    has_recent_crossing,
+    adjust_border_crossing,
+    get_checkpoint_statuses,
+)
 from ui_helpers import send_default_main_menu, send_db_error_message
 from distance_optimizer import handle_plan_route_cmd, handle_plan_callback
 
@@ -63,13 +84,20 @@ async def send_country_selection(chat_id: int, prefix: str = "country") -> None:
         [{"text": meta["name"], "callback_data": f"{prefix}:{code}"}]
         for code, meta in COUNTRIES_AND_CHECKPOINTS.items()
     ]
-    buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
+    if prefix == "country":
+        cancel_callback = "cancel:country"
+    elif prefix == "stats_country":
+        cancel_callback = "cancel:stats_country"
+    else:
+        cancel_callback = "cancel:flow"
+
+    buttons.append([{"text": CMD_CANCEL, "callback_data": cancel_callback}])
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": "Оберіть країну:",
         "reply_markup": {"inline_keyboard": buttons},
     })
-
+ 
 
 async def handle_idle_input(chat_id: int, text: str) -> None:
     logger.info("handle_idle_input | chat_id=%s text=%r", chat_id, text)
@@ -79,15 +107,10 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
         await send_main_menu(chat_id, GREETINGS_PROMPT)
     elif text == CMD_START_CROSSING:
         logger.info("Route: IDLE → start_crossing | chat_id=%s", chat_id)
+        await increment_main_menu_analytics("start_crossing")
+        await increment_crossing_funnel_analytics("step_0_started")
         try:
-            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=MIN_CROSSING_INTERVAL_MINUTES)).isoformat()
-            result = await get_supabase().table("border_crossings") \
-                .select("id") \
-                .eq("chat_id", chat_id) \
-                .gt("completed_at", cutoff) \
-                .maybe_single() \
-                .execute()
-            if result and result.data:
+            if await has_recent_crossing(chat_id, MIN_CROSSING_INTERVAL_MINUTES):
                 logger.info("Route: IDLE → start_crossing blocked | recent crossing found | chat_id=%s", chat_id)
                 await send_main_menu(chat_id, ERROR_TOO_FREQUENT_CROSSING)
                 return
@@ -102,12 +125,18 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
             await send_main_menu(chat_id, PROMPT_CHOOSE_ACTION)
     elif text == CMD_STATS:
         logger.info("Route: IDLE → stats | chat_id=%s", chat_id)
+        await increment_main_menu_analytics("view_stats")
+        await increment_stats_funnel_analytics("step_0_started")
         await send_country_selection(chat_id, prefix="stats_country")
     elif text == CMD_PLAN_ROUTE:
         logger.info("Route: IDLE → plan route | chat_id=%s", chat_id)
+        await increment_main_menu_analytics("plan_route")
+        await increment_plan_route_funnel_analytics("step_0_started")
         await handle_plan_route_cmd(chat_id)
     elif text == CMD_INFO:
         logger.info("Route: IDLE → info | chat_id=%s", chat_id)
+        await increment_main_menu_analytics("view_info")
+        await increment_info_analytics("views")
         await send_main_menu(chat_id, INFO_PROMPT)
     else:
         logger.info("Route: IDLE → unrecognised input | chat_id=%s text=%r", chat_id, text)
@@ -127,6 +156,9 @@ async def handle_crossed(chat_id: int) -> None:
             logger.warning("handle_crossed | no active session found | chat_id=%s", chat_id)
             await send_default_main_menu(chat_id)
             return
+
+        checkpoint_id = session.get("checkpoint_id")
+        await increment_crossing_event_analytics(checkpoint_id, "passed")
 
         now = datetime.now(timezone.utc)
         started_at = datetime.fromisoformat(session["started_at"])
@@ -206,6 +238,9 @@ async def handle_still_waiting(
     message_id: int | None = None,
 ) -> None:
     try:
+        session = await get_session(chat_id)
+        checkpoint_id = session.get("checkpoint_id") if session else None
+        await increment_crossing_event_analytics(checkpoint_id, "still_waiting")
         await update_last_user_action(chat_id, datetime.now(timezone.utc).isoformat())
         logger.info("handle_still_waiting | session updated | chat_id=%s", chat_id)
     except Exception:
@@ -239,6 +274,9 @@ async def handle_still_waiting(
 async def handle_cancel_queue(chat_id: int) -> None:
     logger.info("handle_cancel_queue | chat_id=%s", chat_id)
     try:
+        session = await get_session(chat_id)
+        checkpoint_id = session.get("checkpoint_id") if session else None
+        await increment_crossing_event_analytics(checkpoint_id, "cancel")
         await delete_session(chat_id)
         logger.info("handle_cancel_queue | session deleted | chat_id=%s", chat_id)
     except Exception:
@@ -301,11 +339,16 @@ async def handle_country_selected(chat_id: int, country_code: str, prefix: str =
     if not country:
         logger.warning("handle_country_selected | unknown country_code=%s", country_code)
         return
+
+    if prefix == "checkpoint":
+        await increment_crossing_country_analytics(country_code)
+        await increment_crossing_funnel_analytics("step_1_country_selected")
     buttons = [
         [{"text": name, "callback_data": f"{prefix}:{country_code}:{cp_id}"}]
         for cp_id, name in country["checkpoints"].items()
     ]
-    buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:flow"}])
+    cancel_callback = "cancel:checkpoint" if prefix == "checkpoint" else "cancel:flow"
+    buttons.append([{"text": CMD_CANCEL, "callback_data": cancel_callback}])
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"Оберіть пункт пропуску ({country['name']}):",
@@ -320,14 +363,18 @@ async def handle_checkpoint_selected(
         "handle_checkpoint_selected | chat_id=%s country=%s checkpoint=%s prefix=%s",
         chat_id, country_code, checkpoint_id, prefix,
     )
+    if prefix == "direction":
+        await increment_checkpoint_analytics(checkpoint_id)
+        await increment_crossing_funnel_analytics("step_2_checkpoint_selected")
     checkpoint_name = COUNTRIES_AND_CHECKPOINTS.get(country_code, {}).get("checkpoints", {}).get(checkpoint_id, checkpoint_id)
+    cancel_callback = "cancel:direction" if prefix == "direction" else "cancel:flow"
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"Оберіть напрямок руху ({checkpoint_name}):",
         "reply_markup": {"inline_keyboard": [
             [{"text": "🇪🇺 Виїзд з України", "callback_data": f"{prefix}:{checkpoint_id}:OUTBOUND"}],
             [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": f"{prefix}:{checkpoint_id}:INBOUND"}],
-            [{"text": CMD_CANCEL,              "callback_data": "cancel:flow"}],
+            [{"text": CMD_CANCEL,              "callback_data": cancel_callback}],
         ]},
     })
 
@@ -339,6 +386,8 @@ async def handle_direction_selection(
         "handle_direction_selection | chat_id=%s checkpoint=%s direction=%s",
         chat_id, checkpoint_id, direction,
     )
+    await increment_direction_analytics(checkpoint_id, direction)
+    await increment_crossing_funnel_analytics("step_3_completed")
     now = datetime.now(timezone.utc).isoformat()
     try:
         await upsert_session(
@@ -572,32 +621,16 @@ async def handle_adjust_crossing(
         chat_id, crossing_id, adjust_minutes,
     )
     try:
-        row = await get_supabase().table("border_crossings") \
-            .select("started_at, completed_at") \
-            .eq("id", crossing_id) \
-            .single() \
-            .execute()
-
-        started_at   = datetime.fromisoformat(row.data["started_at"])
-        completed_at = datetime.fromisoformat(row.data["completed_at"]) - timedelta(minutes=adjust_minutes)
-        if completed_at < started_at:
+        success = await adjust_border_crossing(crossing_id, adjust_minutes)
+        if not success:
             return await send_telegram_request("answerCallbackQuery", {
                 "callback_query_id": query_id,
                 "text": "⚠️ Невірне коригування. Час проходження не може бути раніше часу початку черги.",
                 "show_alert": True,
             })
-        duration_seconds = max(0, int((completed_at - started_at).total_seconds()))
-
-        await get_supabase().table("border_crossings") \
-            .update({
-                "completed_at":     completed_at.isoformat(),
-                "duration_seconds": duration_seconds,
-            }) \
-            .eq("id", crossing_id) \
-            .execute()
         logger.info(
-            "handle_adjust_crossing | updated | crossing_id=%s new_duration=%s",
-            crossing_id, duration_seconds,
+            "handle_adjust_crossing | updated | crossing_id=%s adjust_minutes=%s",
+            crossing_id, adjust_minutes,
         )
     except Exception:
         logger.exception("handle_adjust_crossing | DB update failed | chat_id=%s", chat_id)
@@ -631,13 +664,15 @@ async def handle_stats_country_selected(chat_id: int, country_code: str) -> None
     country = COUNTRIES_AND_CHECKPOINTS.get(country_code)
     if not country:
         return
+    await increment_stats_country_analytics(country_code)
+    await increment_stats_funnel_analytics("step_1_country_selected")
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
         "text": f"📊 Статистика ({country['name']})\nОберіть напрямок:",
         "reply_markup": {"inline_keyboard": [
             [{"text": "🇪🇺 Виїзд з України", "callback_data": f"stats_dir:{country_code}:OUTBOUND"}],
             [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": f"stats_dir:{country_code}:INBOUND"}],
-            [{"text": CMD_CANCEL,              "callback_data": "cancel:flow"}],
+            [{"text": CMD_CANCEL,              "callback_data": "cancel:stats_direction"}],
         ]},
     })
 
@@ -653,6 +688,9 @@ async def handle_stats_direction_selected(
     if not country:
         return
 
+    await increment_stats_direction_analytics(country_code, direction)
+    await increment_stats_funnel_analytics("step_2_completed")
+
     await send_telegram_request("editMessageText", {
         "chat_id": chat_id,
         "message_id": message_id,
@@ -662,14 +700,7 @@ async def handle_stats_direction_selected(
 
     checkpoint_ids = list(country["checkpoints"].keys())
     try:
-        result = await get_supabase().table("checkpoint_status") \
-            .select("*") \
-            .in_("checkpoint_id", checkpoint_ids) \
-            .eq("direction", direction) \
-            .eq("transport_type", "car") \
-            .execute()
-        stats_data = result.data or []
-        
+        stats_data = await get_checkpoint_statuses(checkpoint_ids, direction)
         handles = await get_checkpoint_telegram_handles(checkpoint_ids)
     except Exception:
         logger.exception("handle_stats_direction_selected | DB query failed")
@@ -816,6 +847,25 @@ async def route_callback_query(
 
     elif action == "cancel":
         logger.info("Route: callback → inline_cancel | chat_id=%s", chat_id)
+        screen = parts[1] if len(parts) > 1 else None
+        if screen == "country":
+            await increment_cancel_funnel_analytics("cancel_at_country")
+        elif screen == "checkpoint":
+            await increment_cancel_funnel_analytics("cancel_at_checkpoint")
+        elif screen == "direction":
+            await increment_cancel_funnel_analytics("cancel_at_direction")
+        elif screen == "stats_country":
+            await increment_stats_cancel_funnel_analytics("cancel_at_country")
+        elif screen == "stats_direction":
+            await increment_stats_cancel_funnel_analytics("cancel_at_direction")
+        elif screen == "plan_country":
+            await increment_plan_route_cancel_funnel_analytics("cancel_at_country")
+        elif screen == "plan_direction":
+            await increment_plan_route_cancel_funnel_analytics("cancel_at_direction")
+        elif screen == "plan_origin":
+            await increment_plan_route_cancel_funnel_analytics("cancel_at_origin")
+        elif screen == "plan_destination":
+            await increment_plan_route_cancel_funnel_analytics("cancel_at_destination")
         await handle_inline_cancel(chat_id, message_id)
 
     elif action == "close_success":
@@ -866,6 +916,8 @@ async def process_update(body: dict) -> None:
     if chat_id is None:
         logger.info("No actionable message found, ignoring update")
         return
+
+    await track_unique_user(chat_id)
 
     # Intercept admin's ForceReply before processing normal state
     if reply_to_message:

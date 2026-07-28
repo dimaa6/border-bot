@@ -4,7 +4,12 @@ from log_setup import configure_logging
 from datetime import datetime, timezone, timedelta
 
 from clients import get_supabase, send_telegram_request, send_main_menu
-from redis_sessions import iter_potentially_stale_sessions, update_last_reminded, delete_session
+from redis_sessions import (
+    iter_potentially_stale_sessions,
+    update_last_reminded,
+    delete_session,
+    increment_crossing_event_analytics,
+)
 from checkpoints import COUNTRIES_AND_CHECKPOINTS
 from handler import GREETINGS_PROMPT_SHORT
 
@@ -44,7 +49,9 @@ def _get_checkpoint_name(checkpoint_id: str) -> str:
 
 async def _expire_session(session: dict) -> None:
     chat_id = session["chat_id"]
-    logger.info("check_stale_sessions | expiring session | chat_id=%s", chat_id)
+    checkpoint_id = session.get("checkpoint_id")
+    logger.info("check_stale_sessions | expiring session | chat_id=%s checkpoint_id=%s", chat_id, checkpoint_id)
+    await increment_crossing_event_analytics(checkpoint_id, "expired")
     await delete_session(chat_id)
     logger.info("check_stale_sessions | session deleted | chat_id=%s", chat_id)
     await send_telegram_request("sendMessage", {
