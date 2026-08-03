@@ -24,6 +24,10 @@ UKRAINIAN_CITIES_SK = ["Lviv", "Mukachevo", "Uzhhorod"]
 SLOVAK_CITIES = ["Kosice"]
 CHECKPOINTS_SK = ["Malyi Bereznyi", "Uzhhorod"]
 
+UKRAINIAN_CITIES_HU = ["Mukachevo", "Uzhhorod", "Khust"]
+HUNGARIAN_CITIES = ["Budapest"]
+CHECKPOINTS_HU = ["Kosyno", "Chop", "Dzvinkove", "Luzhanka", "Vylok"]
+
 COUNTRY_CONFIG = {
     "PL": {
         "name": "Польща",
@@ -37,6 +41,12 @@ COUNTRY_CONFIG = {
         "foreign_cities": SLOVAK_CITIES,
         "checkpoints": CHECKPOINTS_SK,
     },
+    "HU": {
+        "name": "Угорщина",
+        "ua_cities": UKRAINIAN_CITIES_HU,
+        "foreign_cities": HUNGARIAN_CITIES,
+        "checkpoints": CHECKPOINTS_HU,
+    },
 }
 
 # Translation mappings: English -> Ukrainian
@@ -48,9 +58,11 @@ CITY_EN_TO_UA = {
     "Brody": "Броди",
     "Mukachevo": "Мукачево",
     "Uzhhorod": "Ужгород",
+    "Khust": "Хуст",
     "Krakow": "Краків",
     "Warsaw": "Варшава",
     "Kosice": "Кошице",
+    "Budapest": "Будапешт",
 }
 
 # Reverse mapping for when you receive the button click/text from the user: Ukrainian -> English
@@ -68,6 +80,11 @@ CHECKPOINT_EN_TO_UA = {
     "Smilnytsia": "Смільниця",
     "Malyi Bereznyi": "Малий Березний",
     "Uzhhorod": "Ужгород",
+    "Kosyno": "Косино",
+    "Chop": "Чоп (Тиса)",
+    "Dzvinkove": "Дзвінкове",
+    "Luzhanka": "Лужанка",
+    "Vylok": "Вилок",
 }
 
 # Nested dictionary mapping: Ukrainian City -> Checkpoint -> Drive time (minutes)
@@ -82,9 +99,18 @@ DISTANCES_UA_TO_CP = {
     "Kovel": {"Ustyluh": 49, "Krakivets": 194, "Rava Ruska": 135, "Shehyni": 226, "Uhryniv": 84, "Hrushiv": 180, "Nizhankovichi": 267, "Smilnytsia": 265},
     "Stryi": {"Ustyluh": 205, "Krakivets": 117, "Rava Ruska": 147, "Shehyni": 110, "Uhryniv": 165, "Hrushiv": 124, "Nizhankovichi": 113, "Smilnytsia": 110},
     "Brody": {"Ustyluh": 131, "Krakivets": 154, "Rava Ruska": 121, "Shehyni": 167, "Uhryniv": 93, "Hrushiv": 161, "Nizhankovichi": 202, "Smilnytsia": 200},
-    # Slovakia
-    "Mukachevo": {"Malyi Bereznyi": 72, "Uzhhorod": 42},
-    "Uzhhorod": {"Malyi Bereznyi": 43, "Uzhhorod": 12},
+    # Slovakia & Hungary
+    "Mukachevo": {
+        "Malyi Bereznyi": 72, "Uzhhorod": 42,
+        "Kosyno": 44, "Chop": 43, "Dzvinkove": 51, "Luzhanka": 44, "Vylok": 55
+    },
+    "Uzhhorod": {
+        "Malyi Bereznyi": 43, "Uzhhorod": 12,
+        "Kosyno": 59, "Chop": 22, "Dzvinkove": 59, "Luzhanka": 68, "Vylok": 78
+    },
+    "Khust": {
+        "Kosyno": 85, "Chop": 106, "Dzvinkove": 91, "Luzhanka": 70, "Vylok": 41
+    },
 }
 
 # Nested dictionary mapping: Checkpoint -> Foreign City -> Drive time (minutes)
@@ -101,6 +127,12 @@ DISTANCES_CP_TO_PL = {
     # Slovakia
     "Malyi Bereznyi": {"Kosice": 85},
     "Uzhhorod": {"Kosice": 71},
+    # Hungary
+    "Kosyno": {"Budapest": 184},
+    "Chop": {"Budapest": 181},
+    "Dzvinkove": {"Budapest": 198},
+    "Luzhanka": {"Budapest": 182},
+    "Vylok": {"Budapest": 207},
 }
 
 def format_minutes_to_str(minutes: int) -> str:
@@ -121,6 +153,11 @@ DB_TO_INTERNAL_CP = {
     "PL_SMILNYTSIA": "Smilnytsia",
     "SK_MALYI_BEREZNYI": "Malyi Bereznyi",
     "SK_UZHHOROD": "Uzhhorod",
+    "HU_KOSYNO": "Kosyno",
+    "HU_CHOP": "Chop",
+    "HU_DZVINKOVE": "Dzvinkove",
+    "HU_LUZHANKA": "Luzhanka",
+    "HU_VYLOK": "Vylok",
 }
 
 
@@ -151,6 +188,7 @@ async def handle_plan_route_cmd(chat_id: int):
     buttons = [
         [{"text": "Польща", "callback_data": "plan_country:PL"}],
         [{"text": "Словаччина", "callback_data": "plan_country:SK"}],
+        [{"text": "Угорщина", "callback_data": "plan_country:HU"}],
         [{"text": CMD_CANCEL, "callback_data": "cancel:plan_country"}]
     ]
     await send_telegram_request("sendMessage", {
