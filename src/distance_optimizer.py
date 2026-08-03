@@ -20,6 +20,25 @@ CHECKPOINTS = [
     "Uhryniv", "Hrushiv", "Nizhankovichi", "Smilnytsia"
 ]
 
+UKRAINIAN_CITIES_SK = ["Lviv", "Mukachevo", "Uzhhorod"]
+SLOVAK_CITIES = ["Kosice"]
+CHECKPOINTS_SK = ["Malyi Bereznyi", "Uzhhorod"]
+
+COUNTRY_CONFIG = {
+    "PL": {
+        "name": "Польща",
+        "ua_cities": UKRAINIAN_CITIES,
+        "foreign_cities": POLISH_CITIES,
+        "checkpoints": CHECKPOINTS,
+    },
+    "SK": {
+        "name": "Словаччина",
+        "ua_cities": UKRAINIAN_CITIES_SK,
+        "foreign_cities": SLOVAK_CITIES,
+        "checkpoints": CHECKPOINTS_SK,
+    },
+}
+
 # Translation mappings: English -> Ukrainian
 CITY_EN_TO_UA = {
     "Lviv": "Львів",
@@ -27,8 +46,11 @@ CITY_EN_TO_UA = {
     "Kovel": "Ковель",
     "Stryi": "Стрий",
     "Brody": "Броди",
+    "Mukachevo": "Мукачево",
+    "Uzhhorod": "Ужгород",
     "Krakow": "Краків",
-    "Warsaw": "Варшава"
+    "Warsaw": "Варшава",
+    "Kosice": "Кошице",
 }
 
 # Reverse mapping for when you receive the button click/text from the user: Ukrainian -> English
@@ -43,20 +65,31 @@ CHECKPOINT_EN_TO_UA = {
     "Uhryniv": "Угринів", 
     "Hrushiv": "Грушів", 
     "Nizhankovichi": "Нижанковичі", 
-    "Smilnytsia": "Смільниця"
+    "Smilnytsia": "Смільниця",
+    "Malyi Bereznyi": "Малий Березний",
+    "Uzhhorod": "Ужгород",
 }
 
 # Nested dictionary mapping: Ukrainian City -> Checkpoint -> Drive time (minutes)
 DISTANCES_UA_TO_CP = {
-    "Lviv": {"Ustyluh": 141, "Krakivets": 71, "Rava Ruska": 88, "Shehyni": 82, "Uhryniv": 102, "Hrushiv": 78, "Nizhankovichi": 121, "Smilnytsia": 118},
+    # Poland
+    "Lviv": {
+        "Ustyluh": 141, "Krakivets": 71, "Rava Ruska": 88, "Shehyni": 82, 
+        "Uhryniv": 102, "Hrushiv": 78, "Nizhankovichi": 121, "Smilnytsia": 118,
+        "Malyi Bereznyi": 206, "Uzhhorod": 246
+    },
     "Lutsk": {"Ustyluh": 76, "Krakivets": 192, "Rava Ruska": 146, "Shehyni": 215, "Uhryniv": 103, "Hrushiv": 187, "Nizhankovichi": 251, "Smilnytsia": 249},
     "Kovel": {"Ustyluh": 49, "Krakivets": 194, "Rava Ruska": 135, "Shehyni": 226, "Uhryniv": 84, "Hrushiv": 180, "Nizhankovichi": 267, "Smilnytsia": 265},
     "Stryi": {"Ustyluh": 205, "Krakivets": 117, "Rava Ruska": 147, "Shehyni": 110, "Uhryniv": 165, "Hrushiv": 124, "Nizhankovichi": 113, "Smilnytsia": 110},
     "Brody": {"Ustyluh": 131, "Krakivets": 154, "Rava Ruska": 121, "Shehyni": 167, "Uhryniv": 93, "Hrushiv": 161, "Nizhankovichi": 202, "Smilnytsia": 200},
+    # Slovakia
+    "Mukachevo": {"Malyi Bereznyi": 72, "Uzhhorod": 42},
+    "Uzhhorod": {"Malyi Bereznyi": 43, "Uzhhorod": 12},
 }
 
-# Nested dictionary mapping: Checkpoint -> Polish City -> Drive time (minutes)
+# Nested dictionary mapping: Checkpoint -> Foreign City -> Drive time (minutes)
 DISTANCES_CP_TO_PL = {
+    # Poland
     "Ustyluh": {"Krakow": 269, "Warsaw": 227},
     "Krakivets": {"Krakow": 146, "Warsaw": 246},
     "Rava Ruska": {"Krakow": 211, "Warsaw": 241},
@@ -65,6 +98,9 @@ DISTANCES_CP_TO_PL = {
     "Hrushiv": {"Krakow": 172, "Warsaw": 255},
     "Nizhankovichi": {"Krakow": 159, "Warsaw": 259},
     "Smilnytsia": {"Krakow": 204, "Warsaw": 304},
+    # Slovakia
+    "Malyi Bereznyi": {"Kosice": 85},
+    "Uzhhorod": {"Kosice": 71},
 }
 
 def format_minutes_to_str(minutes: int) -> str:
@@ -83,6 +119,8 @@ DB_TO_INTERNAL_CP = {
     "PL_HRUSHIV": "Hrushiv",
     "PL_NIZHANKOVICHI": "Nizhankovichi",
     "PL_SMILNYTSIA": "Smilnytsia",
+    "SK_MALYI_BEREZNYI": "Malyi Bereznyi",
+    "SK_UZHHOROD": "Uzhhorod",
 }
 
 
@@ -108,11 +146,11 @@ async def get_checkpoint_wait_times(direction: str) -> dict:
         return {}
 
 
-
 async def handle_plan_route_cmd(chat_id: int):
     """Entry point for /plan_route -> choose country"""
     buttons = [
         [{"text": "Польща", "callback_data": "plan_country:PL"}],
+        [{"text": "Словаччина", "callback_data": "plan_country:SK"}],
         [{"text": CMD_CANCEL, "callback_data": "cancel:plan_country"}]
     ]
     await send_telegram_request("sendMessage", {
@@ -135,24 +173,31 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
             "message_id": message_id,
             "text": "Оберіть напрямок руху:",
             "reply_markup": {"inline_keyboard": [
-                [{"text": "🇪🇺 Виїзд з України", "callback_data": "plan_dir:OUTBOUND"}],
-                [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": "plan_dir:INBOUND"}],
+                [{"text": "🇪🇺 Виїзд з України", "callback_data": f"plan_dir:{country_code}:OUTBOUND"}],
+                [{"text": "🇺🇦 В'їзд в Україну",  "callback_data": f"plan_dir:{country_code}:INBOUND"}],
                 [{"text": CMD_CANCEL,              "callback_data": "cancel:plan_direction"}],
             ]},
         })
 
     elif action == "plan_dir":
-        direction = parts[1]
+        if len(parts) >= 3:
+            country_code = parts[1]
+            direction = parts[2]
+        else:
+            country_code = "PL"
+            direction = parts[1]
+
         is_outbound = (direction == "OUTBOUND")
-        await increment_plan_route_direction_analytics("PL", direction)
+        await increment_plan_route_direction_analytics(country_code, direction)
         await increment_plan_route_funnel_analytics("step_2_direction_selected")
         
-        prompt_text = "Оберіть ваше місто відправлення (Україна):" if is_outbound else "Оберіть ваше місто відправлення (Польща):"
-        cities = UKRAINIAN_CITIES if is_outbound else POLISH_CITIES
+        cfg = COUNTRY_CONFIG.get(country_code, COUNTRY_CONFIG["PL"])
+        prompt_text = "Оберіть ваше місто відправлення (Україна):" if is_outbound else f"Оберіть ваше місто відправлення ({cfg['name']}):"
+        cities = cfg["ua_cities"] if is_outbound else cfg["foreign_cities"]
 
         buttons = []
         for city in cities:
-            buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_orig:{direction}:{city}"}])
+            buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_orig:{country_code}:{direction}:{city}"}])
         buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:plan_origin"}])
 
         await send_telegram_request("editMessageText", {
@@ -163,18 +208,26 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         })
 
     elif action == "plan_orig":
-        direction = parts[1]
-        origin_city = parts[2]
+        if len(parts) >= 4:
+            country_code = parts[1]
+            direction = parts[2]
+            origin_city = parts[3]
+        else:
+            country_code = "PL"
+            direction = parts[1]
+            origin_city = parts[2]
+
         is_outbound = (direction == "OUTBOUND")
         await increment_plan_route_city_analytics("origin", origin_city)
         await increment_plan_route_funnel_analytics("step_3_origin_selected")
         
-        prompt_text = "Оберіть ваше місто призначення (Польща):" if is_outbound else "Оберіть ваше місто призначення (Україна):"
-        cities = POLISH_CITIES if is_outbound else UKRAINIAN_CITIES
+        cfg = COUNTRY_CONFIG.get(country_code, COUNTRY_CONFIG["PL"])
+        prompt_text = f"Оберіть ваше місто призначення ({cfg['name']}):" if is_outbound else "Оберіть ваше місто призначення (Україна):"
+        cities = cfg["foreign_cities"] if is_outbound else cfg["ua_cities"]
         
         buttons = []
         for city in cities:
-            buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_dest:{direction}:{origin_city}:{city}"}])
+            buttons.append([{"text": CITY_EN_TO_UA[city], "callback_data": f"plan_dest:{country_code}:{direction}:{origin_city}:{city}"}])
         buttons.append([{"text": CMD_CANCEL, "callback_data": "cancel:plan_destination"}])
 
         await send_telegram_request("editMessageText", {
@@ -185,9 +238,17 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         })
 
     elif action == "plan_dest":
-        direction = parts[1]
-        origin_city = parts[2]
-        destination_city = parts[3]
+        if len(parts) >= 5:
+            country_code = parts[1]
+            direction = parts[2]
+            origin_city = parts[3]
+            destination_city = parts[4]
+        else:
+            country_code = "PL"
+            direction = parts[1]
+            origin_city = parts[2]
+            destination_city = parts[3]
+
         await increment_plan_route_city_analytics("destination", destination_city)
         await increment_plan_route_funnel_analytics("step_4_completed")
         
@@ -209,11 +270,12 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         routes = []
         is_outbound = (direction == "OUTBOUND")
         ua_city = origin_city if is_outbound else destination_city
-        pl_city = destination_city if is_outbound else origin_city
+        foreign_city = destination_city if is_outbound else origin_city
+        cfg = COUNTRY_CONFIG.get(country_code, COUNTRY_CONFIG["PL"])
 
-        for cp in CHECKPOINTS:
+        for cp in cfg["checkpoints"]:
             dist_ua = DISTANCES_UA_TO_CP.get(ua_city, {}).get(cp, 0)
-            dist_pl = DISTANCES_CP_TO_PL.get(cp, {}).get(pl_city, 0)
+            dist_pl = DISTANCES_CP_TO_PL.get(cp, {}).get(foreign_city, 0)
             
             # Use real-time wait from DB if available, else 0 or a small default
             wait_time = wait_times.get(cp, 0) 

@@ -7,19 +7,16 @@ load_dotenv()
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_KEY")
 
-# Define your 4 origins and 4 destinations (lat, lng or address strings)
-origins_ua = [
+# Poland
+origins_ua_pl = [
     {"latitude": 49.8445, "longitude": 24.0253},  # Lviv
     {"latitude": 50.7472, "longitude": 25.3254},  # Lutsk
     {"latitude": 51.2014, "longitude": 24.6773},  # Kovel
     {"latitude": 49.2486, "longitude": 23.8559},  # Stryi
+    {"latitude": 50.09622, "longitude": 25.17622}  # Brody
 ]
 
-origin_ua_brody = [
-    {"latitude": 50.09622, "longitude": 25.17622}
-]
-
-destinations_ua = [
+destinations_ua_pl = [
     {"latitude": 50.86069, "longitude": 24.15097},  # Checkpoint Ustyluh
     {"latitude": 49.94905, "longitude": 23.15331},  # Checkpoint Krakivets
     {"latitude": 50.25847, "longitude": 23.60417},  # Checkpoint Rava-Ruska
@@ -46,8 +43,30 @@ destinations_pl = [
     {"latitude": 52.2286, "longitude": 21.00046},   # Warsaw
 ]
 
-origins = origin_ua_brody
-destinations = destinations_ua
+# Slovakia
+origins_ua_sk = [
+    {"latitude": 49.8445, "longitude": 24.0253},  # Lviv
+    {"latitude": 48.4597, "longitude": 22.7133},  # Mukachevo
+    {"latitude": 48.5767, "longitude": 22.3363},  # Uzhhorod
+]
+
+destinations_ua_sk = [
+    {"latitude": 48.86438, "longitude": 22.44406},  # Checkpoint Malyi Bereznyi
+    {"latitude": 48.64744, "longitude": 22.26671},  # Checkpoint Uzhhorod
+]
+
+origins_sk = [
+    {"latitude": 48.8992, "longitude": 22.3952},   # SK_Malyi Bereznyi
+    {"latitude": 48.6549, "longitude": 22.2589},   # SK_Uzhhorod
+]
+
+destinations_sk = [
+    {"latitude": 48.7304, "longitude": 21.4390},   # SK_Kocice
+]
+
+
+origins = origins_sk
+destinations = destinations_sk
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
