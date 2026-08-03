@@ -64,9 +64,36 @@ destinations_sk = [
     {"latitude": 48.7304, "longitude": 21.4390},   # SK_Kocice
 ]
 
+# Hungary
+origins_ua_hu = [
+    {"latitude": 48.4597, "longitude": 22.7133},  # Mukachevo
+    {"latitude": 48.5767, "longitude": 22.3363},  # Uzhhorod
+    {"latitude": 48.1769, "longitude": 23.2963},  # Khust
+]
 
-origins = origins_sk
-destinations = destinations_sk
+destinations_ua_hu = [
+    {"latitude": 48.2549, "longitude": 22.45646},  # Checkpoint Kosyno
+    {"latitude": 48.4280, "longitude": 22.1740},   # Checkpoint Chop
+    {"latitude": 48.3127, "longitude": 22.33158},  # Checkpoint Dzvinkove
+    {"latitude": 48.1681, "longitude": 22.58348},  # Checkpoint Luzhanka
+    {"latitude": 48.1102, "longitude": 22.83615},  # Checkpoint Vylok
+]
+
+origins_hu = [
+    {"latitude": 48.2318, "longitude": 22.43137},  # HU_Kosyno
+    {"latitude": 48.3946, "longitude": 22.1655},   # HU_Chop
+    {"latitude": 48.31726, "longitude": 22.2968},  # HU_Dzvinkove
+    {"latitude": 48.1622, "longitude": 22.5638},   # HU_Luzhanka
+    {"latitude": 48.0925, "longitude": 22.8211},   # HU_Vylok
+]
+
+destinations_hu = [
+    {"latitude": 47.49734, "longitude": 19.0706},   # HU_Budapest
+]
+
+
+origins = origins_hu
+destinations = destinations_hu
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
