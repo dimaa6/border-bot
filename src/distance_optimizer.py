@@ -32,6 +32,10 @@ UKRAINIAN_CITIES_RO = ["Mukachevo", "Ivano-Frankivsk", "Chernivtsi", "Odesa"]
 ROMANIAN_CITIES = ["Bucharest", "Constanta"]
 CHECKPOINTS_RO = ["Orlivka", "Dyakivtsi", "Dyakove", "Krasnoilsk", "Porubne", "Solotvyno"]
 
+UKRAINIAN_CITIES_MD = ["Vinnytsia", "Uman", "Odesa"]
+MOLDOVAN_CITIES = ["Chisinau"]
+CHECKPOINTS_MD = ["Mohyliv-Podilskyi", "Bronnytsya", "Rososhany", "Mamalyha", "Sokyryany", "Mayaky-Udobne"]
+
 COUNTRY_CONFIG = {
     "PL": {
         "name": "Польща",
@@ -57,6 +61,12 @@ COUNTRY_CONFIG = {
         "foreign_cities": ROMANIAN_CITIES,
         "checkpoints": CHECKPOINTS_RO,
     },
+    "MD": {
+        "name": "Молдова",
+        "ua_cities": UKRAINIAN_CITIES_MD,
+        "foreign_cities": MOLDOVAN_CITIES,
+        "checkpoints": CHECKPOINTS_MD,
+    },
 }
 
 # Translation mappings: English -> Ukrainian
@@ -72,12 +82,15 @@ CITY_EN_TO_UA = {
     "Ivano-Frankivsk": "Івано-Франківськ",
     "Chernivtsi": "Чернівці",
     "Odesa": "Одеса",
+    "Vinnytsia": "Вінниця",
+    "Uman": "Умань",
     "Krakow": "Краків",
     "Warsaw": "Варшава",
     "Kosice": "Кошице",
     "Budapest": "Будапешт",
     "Bucharest": "Бухарест",
     "Constanta": "Констанца",
+    "Chisinau": "Кишинів",
 }
 
 # Reverse mapping for when you receive the button click/text from the user: Ukrainian -> English
@@ -106,6 +119,12 @@ CHECKPOINT_EN_TO_UA = {
     "Krasnoilsk": "Красноїльськ",
     "Porubne": "Порубне",
     "Solotvyno": "Солотвино",
+    "Mohyliv-Podilskyi": "Могилів-Подільський",
+    "Bronnytsya": "Бронниця",
+    "Rososhany": "Россошани",
+    "Mamalyha": "Мамалига",
+    "Sokyryany": "Сокиряни",
+    "Mayaky-Udobne": "Маяки-Удобне",
 }
 
 # Nested dictionary mapping: Ukrainian City -> Checkpoint -> Drive time (minutes)
@@ -120,7 +139,7 @@ DISTANCES_UA_TO_CP = {
     "Kovel": {"Ustyluh": 49, "Krakivets": 194, "Rava Ruska": 135, "Shehyni": 226, "Uhryniv": 84, "Hrushiv": 180, "Nizhankovichi": 267, "Smilnytsia": 265},
     "Stryi": {"Ustyluh": 205, "Krakivets": 117, "Rava Ruska": 147, "Shehyni": 110, "Uhryniv": 165, "Hrushiv": 124, "Nizhankovichi": 113, "Smilnytsia": 110},
     "Brody": {"Ustyluh": 131, "Krakivets": 154, "Rava Ruska": 121, "Shehyni": 167, "Uhryniv": 93, "Hrushiv": 161, "Nizhankovichi": 202, "Smilnytsia": 200},
-    # Slovakia, Hungary & Romania
+    # Slovakia, Hungary, Romania & Moldova
     "Mukachevo": {
         "Malyi Bereznyi": 72, "Uzhhorod": 42,
         "Kosyno": 44, "Chop": 43, "Dzvinkove": 51, "Luzhanka": 44, "Vylok": 55,
@@ -140,7 +159,14 @@ DISTANCES_UA_TO_CP = {
         "Orlivka": 477, "Dyakivtsi": 45, "Dyakove": 359, "Krasnoilsk": 58, "Porubne": 43, "Solotvyno": 260
     },
     "Odesa": {
-        "Orlivka": 207, "Dyakivtsi": 547, "Dyakove": 810, "Krasnoilsk": 603, "Porubne": 564, "Solotvyno": 766
+        "Orlivka": 207, "Dyakivtsi": 547, "Dyakove": 810, "Krasnoilsk": 603, "Porubne": 564, "Solotvyno": 766,
+        "Mohyliv-Podilskyi": 381, "Bronnytsya": 378, "Rososhany": 475, "Mamalyha": 528, "Sokyryany": 436, "Mayaky-Udobne": 46
+    },
+    "Vinnytsia": {
+        "Mohyliv-Podilskyi": 94, "Bronnytsya": 106, "Rososhany": 190, "Mamalyha": 244, "Sokyryany": 152, "Mayaky-Udobne": 343
+    },
+    "Uman": {
+        "Mohyliv-Podilskyi": 223, "Bronnytsya": 229, "Rososhany": 310, "Mamalyha": 363, "Sokyryany": 271, "Mayaky-Udobne": 190
     },
 }
 
@@ -171,6 +197,13 @@ DISTANCES_CP_TO_PL = {
     "Krasnoilsk": {"Bucharest": 381, "Constanta": 450},
     "Porubne": {"Bucharest": 354, "Constanta": 423},
     "Solotvyno": {"Bucharest": 527, "Constanta": 633},
+    # Moldova
+    "Mohyliv-Podilskyi": {"Chisinau": 173},
+    "Bronnytsya": {"Chisinau": 174},
+    "Rososhany": {"Chisinau": 186},
+    "Mamalyha": {"Chisinau": 217},
+    "Sokyryany": {"Chisinau": 187},
+    "Mayaky-Udobne": {"Chisinau": 129},
 }
 
 def format_minutes_to_str(minutes: int) -> str:
@@ -202,6 +235,12 @@ DB_TO_INTERNAL_CP = {
     "RO_DIAKIVTSI": "Dyakivtsi",
     "RO_KRASNOILSK": "Krasnoilsk",
     "RO_ORLIVKA": "Orlivka",
+    "MD_MOHYLIV": "Mohyliv-Podilskyi",
+    "MD_BRONNYTSIA": "Bronnytsya",
+    "MD_ROSSOSHANY": "Rososhany",
+    "MD_MAMALYHA": "Mamalyha",
+    "MD_SOKYRIANY": "Sokyryany",
+    "MD_MAIAKY": "Mayaky-Udobne",
 }
 
 
@@ -234,6 +273,7 @@ async def handle_plan_route_cmd(chat_id: int):
         [{"text": "Словаччина", "callback_data": "plan_country:SK"}],
         [{"text": "Угорщина", "callback_data": "plan_country:HU"}],
         [{"text": "Румунія", "callback_data": "plan_country:RO"}],
+        [{"text": "Молдова", "callback_data": "plan_country:MD"}],
         [{"text": CMD_CANCEL, "callback_data": "cancel:plan_country"}]
     ]
     await send_telegram_request("sendMessage", {
