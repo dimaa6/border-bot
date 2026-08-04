@@ -91,7 +91,6 @@ destinations_hu = [
     {"latitude": 47.49734, "longitude": 19.0706},   # HU_Budapest
 ]
 
-
 # Romania
 origins_ua_ro = [
     {"latitude": 48.4597, "longitude": 22.7133},  # Mukachevo
@@ -123,9 +122,38 @@ destinations_ro = [
     {"latitude": 44.2628, "longitude": 28.5538},  # RO_Constanta
 ]
 
+# Moldova
 
-origins = origins_ro
-destinations = destinations_ro
+origins_ua_md = [
+    {"latitude": 49.2442, "longitude": 28.4774},  # Vinnytsia
+    {"latitude": 48.7258, "longitude": 30.2544},  # Uman
+    {"latitude": 46.5029, "longitude": 30.61084}, # Odesa
+]
+
+destinations_ua_md = [
+    {"latitude": 48.4543, "longitude": 27.7784},  # Checkpoint Mohyliv-Podilskyi
+    {"latitude": 48.40045, "longitude": 27.8801}, # Checkpoint Bronnytsya
+    {"latitude": 48.3919, "longitude": 27.01586}, # Checkpoint Rososhany
+    {"latitude": 48.25795, "longitude": 26.5940}, # Checkpoint Mamalyha
+    {"latitude": 48.4403, "longitude": 27.4449},  # Checkpoint Sokyryany
+    {"latitude": 46.3787, "longitude": 30.0854},  # Checkpoint Mayaky-Udobne
+]
+
+origins_md = [
+    {"latitude": 48.4436, "longitude": 27.7844},  # MD_Mohyliv-Podilskyi
+    {"latitude": 48.3980, "longitude": 27.8749},  # MD_Bronnytsya
+    {"latitude": 48.3676, "longitude": 27.0648},  # MD_Rososhany
+    {"latitude": 48.2673, "longitude": 26.6483},  # MD_Mamalyha
+    {"latitude": 48.4202, "longitude": 27.4545},  # MD_Sokyryany
+    {"latitude": 46.4118, "longitude": 30.1010},  # MD_Mayaky-Udobne
+]
+
+destinations_md = [
+    {"latitude": 47.0351, "longitude": 28.84745}, # MD_Kishinev
+]
+
+origins = origins_md
+destinations = destinations_md
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
