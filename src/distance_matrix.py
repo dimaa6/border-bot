@@ -92,8 +92,40 @@ destinations_hu = [
 ]
 
 
-origins = origins_hu
-destinations = destinations_hu
+# Romania
+origins_ua_ro = [
+    {"latitude": 48.4597, "longitude": 22.7133},  # Mukachevo
+    {"latitude": 48.9213, "longitude": 24.7073},  # Ivano-Frankivsk
+    {"latitude": 48.2920, "longitude": 25.9353},  # Chernivtsi
+    {"latitude": 46.5029, "longitude": 30.61084}, # Odesa
+]
+
+destinations_ua_ro = [
+    {"latitude": 45.3124, "longitude": 28.4462},  # Checkpoint Orlivka
+    {"latitude": 48.10767, "longitude": 26.2809}, # Checkpoint Dyakivtsi
+    {"latitude": 48.0062, "longitude": 23.0018},  # Checkpoint Dyakove
+    {"latitude": 47.9531, "longitude": 25.62044}, # Checkpoint Krasnoilsk
+    {"latitude": 47.9960, "longitude": 26.0535},  # Checkpoint Porubne
+    {"latitude": 47.94204, "longitude": 23.8766}, # Checkpoint Solotvyno
+]
+
+origins_ro = [
+    {"latitude": 45.2769, "longitude": 28.4555},  # RO_Orlivka
+    {"latitude": 48.09759, "longitude": 26.2836}, # RO_Dyakivtsi
+    {"latitude": 47.9932, "longitude": 23.0028},  # RO_Dyakove
+    {"latitude": 47.9438, "longitude": 25.6238},  # RO_Krasnoilsk
+    {"latitude": 47.9833, "longitude": 26.0631},  # RO_Porubne
+    {"latitude": 47.93843, "longitude": 23.8775}, # RO_Solotvyno
+]
+
+destinations_ro = [
+    {"latitude": 44.4363, "longitude": 26.1019},  # RO_Bucharest
+    {"latitude": 44.2628, "longitude": 28.5538},  # RO_Constanta
+]
+
+
+origins = origins_ro
+destinations = destinations_ro
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
