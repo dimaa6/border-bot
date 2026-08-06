@@ -106,6 +106,7 @@ destinations_ua_ro = [
     {"latitude": 47.9531, "longitude": 25.62044}, # Checkpoint Krasnoilsk
     {"latitude": 47.9960, "longitude": 26.0535},  # Checkpoint Porubne
     {"latitude": 47.94204, "longitude": 23.8766}, # Checkpoint Solotvyno
+    {"latitude": 45.4688, "longitude": 28.2948},  # Checkpoint Reni
 ]
 
 origins_ro = [
@@ -115,6 +116,7 @@ origins_ro = [
     {"latitude": 47.9438, "longitude": 25.6238},  # RO_Krasnoilsk
     {"latitude": 47.9833, "longitude": 26.0631},  # RO_Porubne
     {"latitude": 47.93843, "longitude": 23.8775}, # RO_Solotvyno
+    {"latitude": 45.4581, "longitude": 28.1614},  # RO_Reni
 ]
 
 destinations_ro = [
@@ -152,8 +154,8 @@ destinations_md = [
     {"latitude": 47.0351, "longitude": 28.84745}, # MD_Kishinev
 ]
 
-origins = origins_md
-destinations = destinations_md
+origins = [origins_ro[-1]]
+destinations = destinations_ro
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
