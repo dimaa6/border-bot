@@ -29,6 +29,7 @@ COUNTRIES_AND_CHECKPOINTS = {
             "RO_DIAKIVTSI":    "Дяківці",
             "RO_KRASNOILSK":   "Красноїльськ",
             "RO_ORLIVKA":      "Орлівка",
+            "RO_RENI":         "Рені",
         },
     },
     "HU": {

@@ -30,7 +30,7 @@ CHECKPOINTS_HU = ["Kosyno", "Chop", "Dzvinkove", "Luzhanka", "Vylok"]
 
 UKRAINIAN_CITIES_RO = ["Mukachevo", "Ivano-Frankivsk", "Chernivtsi", "Odesa"]
 ROMANIAN_CITIES = ["Bucharest", "Constanta"]
-CHECKPOINTS_RO = ["Orlivka", "Dyakivtsi", "Dyakove", "Krasnoilsk", "Porubne", "Solotvyno"]
+CHECKPOINTS_RO = ["Orlivka", "Dyakivtsi", "Dyakove", "Krasnoilsk", "Porubne", "Solotvyno", "Reni"]
 
 UKRAINIAN_CITIES_MD = ["Vinnytsia", "Uman", "Odesa"]
 MOLDOVAN_CITIES = ["Chisinau"]
@@ -119,6 +119,7 @@ CHECKPOINT_EN_TO_UA = {
     "Krasnoilsk": "Красноїльськ",
     "Porubne": "Порубне",
     "Solotvyno": "Солотвино",
+    "Reni": "Рені",
     "Mohyliv-Podilskyi": "Могилів-Подільський",
     "Bronnytsya": "Бронниця",
     "Rososhany": "Россошани",
@@ -143,7 +144,7 @@ DISTANCES_UA_TO_CP = {
     "Mukachevo": {
         "Malyi Bereznyi": 72, "Uzhhorod": 42,
         "Kosyno": 44, "Chop": 43, "Dzvinkove": 51, "Luzhanka": 44, "Vylok": 55,
-        "Orlivka": 800, "Dyakivtsi": 372, "Dyakove": 74, "Krasnoilsk": 367, "Porubne": 371, "Solotvyno": 128
+        "Orlivka": 800, "Dyakivtsi": 372, "Dyakove": 74, "Krasnoilsk": 367, "Porubne": 371, "Solotvyno": 128, "Reni": 776
     },
     "Uzhhorod": {
         "Malyi Bereznyi": 43, "Uzhhorod": 12,
@@ -153,13 +154,13 @@ DISTANCES_UA_TO_CP = {
         "Kosyno": 85, "Chop": 106, "Dzvinkove": 91, "Luzhanka": 70, "Vylok": 41
     },
     "Ivano-Frankivsk": {
-        "Orlivka": 603, "Dyakivtsi": 175, "Dyakove": 239, "Krasnoilsk": 170, "Porubne": 174, "Solotvyno": 198
+        "Orlivka": 603, "Dyakivtsi": 175, "Dyakove": 239, "Krasnoilsk": 170, "Porubne": 174, "Solotvyno": 198, "Reni": 579
     },
     "Chernivtsi": {
-        "Orlivka": 477, "Dyakivtsi": 45, "Dyakove": 359, "Krasnoilsk": 58, "Porubne": 43, "Solotvyno": 260
+        "Orlivka": 477, "Dyakivtsi": 45, "Dyakove": 359, "Krasnoilsk": 58, "Porubne": 43, "Solotvyno": 260, "Reni": 454
     },
     "Odesa": {
-        "Orlivka": 207, "Dyakivtsi": 547, "Dyakove": 810, "Krasnoilsk": 603, "Porubne": 564, "Solotvyno": 766,
+        "Orlivka": 207, "Dyakivtsi": 547, "Dyakove": 810, "Krasnoilsk": 603, "Porubne": 564, "Solotvyno": 766, "Reni": 230,
         "Mohyliv-Podilskyi": 381, "Bronnytsya": 378, "Rososhany": 475, "Mamalyha": 528, "Sokyryany": 436, "Mayaky-Udobne": 46
     },
     "Vinnytsia": {
@@ -197,6 +198,7 @@ DISTANCES_CP_TO_PL = {
     "Krasnoilsk": {"Bucharest": 381, "Constanta": 450},
     "Porubne": {"Bucharest": 354, "Constanta": 423},
     "Solotvyno": {"Bucharest": 527, "Constanta": 633},
+    "Reni": {"Bucharest": 198, "Constanta": 160},
     # Moldova
     "Mohyliv-Podilskyi": {"Chisinau": 173},
     "Bronnytsya": {"Chisinau": 174},
@@ -235,6 +237,7 @@ DB_TO_INTERNAL_CP = {
     "RO_DIAKIVTSI": "Dyakivtsi",
     "RO_KRASNOILSK": "Krasnoilsk",
     "RO_ORLIVKA": "Orlivka",
+    "RO_RENI": "Reni",
     "MD_MOHYLIV": "Mohyliv-Podilskyi",
     "MD_BRONNYTSIA": "Bronnytsya",
     "MD_ROSSOSHANY": "Rososhany",
