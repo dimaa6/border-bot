@@ -77,6 +77,7 @@ destinations_ua_hu = [
     {"latitude": 48.3127, "longitude": 22.33158},  # Checkpoint Dzvinkove
     {"latitude": 48.1681, "longitude": 22.58348},  # Checkpoint Luzhanka
     {"latitude": 48.1102, "longitude": 22.83615},  # Checkpoint Vylok
+    {"latitude": 47.98058, "longitude": 22.86596}, # Checkpoint Velyka Palad
 ]
 
 origins_hu = [
@@ -85,6 +86,7 @@ origins_hu = [
     {"latitude": 48.31726, "longitude": 22.2968},  # HU_Dzvinkove
     {"latitude": 48.1622, "longitude": 22.5638},   # HU_Luzhanka
     {"latitude": 48.0925, "longitude": 22.8211},   # HU_Vylok
+    {"latitude": 47.97665, "longitude": 22.8609},  # HU_Velyka_Palad
 ]
 
 destinations_hu = [
@@ -154,8 +156,8 @@ destinations_md = [
     {"latitude": 47.0351, "longitude": 28.84745}, # MD_Kishinev
 ]
 
-origins = [origins_ro[-1]]
-destinations = destinations_ro
+origins = origins_ua_hu
+destinations = [destinations_ua_hu[-1]]
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"

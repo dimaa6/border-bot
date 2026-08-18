@@ -40,6 +40,7 @@ COUNTRIES_AND_CHECKPOINTS = {
             "HU_VYLOK":     "Вилок",
             "HU_DZVINKOVE": "Дзвінкове",
             "HU_KOSYNO":    "Косино",
+            "HU_VELYKA_PALAD": "Велика Паладь",
         },
     },
     "MD": {

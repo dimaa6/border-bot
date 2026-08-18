@@ -26,7 +26,7 @@ CHECKPOINTS_SK = ["Malyi Bereznyi", "Uzhhorod"]
 
 UKRAINIAN_CITIES_HU = ["Mukachevo", "Uzhhorod", "Khust"]
 HUNGARIAN_CITIES = ["Budapest"]
-CHECKPOINTS_HU = ["Kosyno", "Chop", "Dzvinkove", "Luzhanka", "Vylok"]
+CHECKPOINTS_HU = ["Kosyno", "Chop", "Dzvinkove", "Luzhanka", "Vylok", "Velyka Palad"]
 
 UKRAINIAN_CITIES_RO = ["Mukachevo", "Ivano-Frankivsk", "Chernivtsi", "Odesa"]
 ROMANIAN_CITIES = ["Bucharest", "Constanta"]
@@ -113,6 +113,7 @@ CHECKPOINT_EN_TO_UA = {
     "Dzvinkove": "Дзвінкове",
     "Luzhanka": "Лужанка",
     "Vylok": "Вилок",
+    "Velyka Palad": "Велика Паладь",
     "Orlivka": "Орлівка",
     "Dyakivtsi": "Дяківці",
     "Dyakove": "Дякове",
@@ -143,15 +144,15 @@ DISTANCES_UA_TO_CP = {
     # Slovakia, Hungary, Romania & Moldova
     "Mukachevo": {
         "Malyi Bereznyi": 72, "Uzhhorod": 42,
-        "Kosyno": 44, "Chop": 43, "Dzvinkove": 51, "Luzhanka": 44, "Vylok": 55,
+        "Kosyno": 44, "Chop": 43, "Dzvinkove": 51, "Luzhanka": 44, "Vylok": 55, "Velyka Palad": 79,
         "Orlivka": 800, "Dyakivtsi": 372, "Dyakove": 74, "Krasnoilsk": 367, "Porubne": 371, "Solotvyno": 128, "Reni": 776
     },
     "Uzhhorod": {
         "Malyi Bereznyi": 43, "Uzhhorod": 12,
-        "Kosyno": 59, "Chop": 22, "Dzvinkove": 59, "Luzhanka": 68, "Vylok": 78
+        "Kosyno": 59, "Chop": 22, "Dzvinkove": 59, "Luzhanka": 68, "Vylok": 78, "Velyka Palad": 103
     },
     "Khust": {
-        "Kosyno": 85, "Chop": 106, "Dzvinkove": 91, "Luzhanka": 70, "Vylok": 41
+        "Kosyno": 85, "Chop": 106, "Dzvinkove": 91, "Luzhanka": 70, "Vylok": 41, "Velyka Palad": 66
     },
     "Ivano-Frankivsk": {
         "Orlivka": 603, "Dyakivtsi": 175, "Dyakove": 239, "Krasnoilsk": 170, "Porubne": 174, "Solotvyno": 198, "Reni": 579
@@ -191,6 +192,7 @@ DISTANCES_CP_TO_PL = {
     "Dzvinkove": {"Budapest": 198},
     "Luzhanka": {"Budapest": 182},
     "Vylok": {"Budapest": 207},
+    "Velyka Palad": {"Budapest": 220},
     # Romania
     "Orlivka": {"Bucharest": 207, "Constanta": 115},
     "Dyakivtsi": {"Bucharest": 386, "Constanta": 455},
@@ -231,6 +233,7 @@ DB_TO_INTERNAL_CP = {
     "HU_DZVINKOVE": "Dzvinkove",
     "HU_LUZHANKA": "Luzhanka",
     "HU_VYLOK": "Vylok",
+    "HU_VELYKA_PALAD": "Velyka Palad",
     "RO_PORUBNE": "Porubne",
     "RO_SOLOTVYNO": "Solotvyno",
     "RO_DIAKOVE": "Dyakove",
