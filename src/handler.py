@@ -42,6 +42,7 @@ from db_helpers import (
     has_recent_crossing,
     adjust_border_crossing,
     get_checkpoint_statuses,
+    get_closed_checkpoints,
 )
 from ui_helpers import send_default_main_menu, send_db_error_message
 from distance_optimizer import handle_plan_route_cmd, handle_plan_callback
@@ -343,8 +344,13 @@ async def handle_country_selected(chat_id: int, country_code: str, prefix: str =
     if prefix == "checkpoint":
         await increment_crossing_country_analytics(country_code)
         await increment_crossing_funnel_analytics("step_1_country_selected")
+
+    closed_checkpoints = await get_closed_checkpoints()
     buttons = [
-        [{"text": name, "callback_data": f"{prefix}:{country_code}:{cp_id}"}]
+        [{
+            "text": f"{CHECKPOINT_CLOSED_ICON} {name} (закрито)" if cp_id in closed_checkpoints else name,
+            "callback_data": f"{prefix}:{country_code}:{cp_id}",
+        }]
         for cp_id, name in country["checkpoints"].items()
     ]
     cancel_callback = "cancel:checkpoint" if prefix == "checkpoint" else "cancel:flow"
@@ -363,10 +369,22 @@ async def handle_checkpoint_selected(
         "handle_checkpoint_selected | chat_id=%s country=%s checkpoint=%s prefix=%s",
         chat_id, country_code, checkpoint_id, prefix,
     )
+    checkpoint_name = COUNTRIES_AND_CHECKPOINTS.get(country_code, {}).get("checkpoints", {}).get(checkpoint_id, checkpoint_id)
+
     if prefix == "direction":
+        closed_checkpoints = await get_closed_checkpoints()
+        if checkpoint_id in closed_checkpoints:
+            logger.info("handle_checkpoint_selected | blocked closed checkpoint | checkpoint=%s", checkpoint_id)
+            reason = closed_checkpoints[checkpoint_id] or "Пункт пропуску тимчасово недоступний."
+            await send_telegram_request("sendMessage", {
+                "chat_id": chat_id,
+                "text": CHECKPOINT_CLOSED_MESSAGE.format(icon=CHECKPOINT_CLOSED_ICON, name=checkpoint_name, reason=reason),
+                "parse_mode": "HTML",
+            })
+            await handle_country_selected(chat_id, country_code, prefix="checkpoint")
+            return
         await increment_checkpoint_analytics(checkpoint_id)
         await increment_crossing_funnel_analytics("step_2_checkpoint_selected")
-    checkpoint_name = COUNTRIES_AND_CHECKPOINTS.get(country_code, {}).get("checkpoints", {}).get(checkpoint_id, checkpoint_id)
     cancel_callback = "cancel:direction" if prefix == "direction" else "cancel:flow"
     await send_telegram_request("sendMessage", {
         "chat_id": chat_id,
@@ -702,6 +720,7 @@ async def handle_stats_direction_selected(
     try:
         stats_data = await get_checkpoint_statuses(checkpoint_ids, direction)
         handles = await get_checkpoint_telegram_handles(checkpoint_ids)
+        closed_checkpoints = await get_closed_checkpoints()
     except Exception:
         logger.exception("handle_stats_direction_selected | DB query failed")
         await send_telegram_request("sendMessage", {
@@ -725,6 +744,8 @@ async def handle_stats_direction_selected(
     has_stats, no_stats = [], []
 
     for cp_id, cp_name in country["checkpoints"].items():
+        if cp_id in closed_checkpoints:
+            continue
         if cp_id in latest_stats:
             has_stats.append((cp_id, cp_name, latest_stats[cp_id]))
         else:
@@ -732,6 +753,12 @@ async def handle_stats_direction_selected(
 
     # Sort checkpoints by the most recently updated to help users find the "best" info first
     has_stats.sort(key=lambda x: x[2]["updated_at"], reverse=True)
+
+    for cp_id, cp_name in country["checkpoints"].items():
+        if cp_id not in closed_checkpoints:
+            continue
+        reason = closed_checkpoints[cp_id] or "Пункт пропуску тимчасово недоступний."
+        lines.append(f"{CHECKPOINT_CLOSED_ICON} <b>{cp_name} — ЗАКРИТО</b>\n{reason}\n")
 
     for cp_id, cp_name, row in has_stats:
         handle = handles.get(cp_id)

@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime, timezone
 from clients import get_supabase, send_telegram_request
-from constants import CMD_CANCEL, CMD_START_CROSSING
-from db_helpers import get_checkpoint_telegram_handles
+from constants import CMD_CANCEL, CMD_START_CROSSING, CHECKPOINT_CLOSED_ICON
+from db_helpers import get_checkpoint_telegram_handles, get_closed_checkpoints
 from redis_sessions import (
     increment_plan_route_country_analytics,
     increment_plan_route_direction_analytics,
@@ -249,6 +249,9 @@ DB_TO_INTERNAL_CP = {
     "MD_MAIAKY": "Mayaky-Udobne",
 }
 
+# Reverse mapping: internal CHECKPOINTS name -> DB checkpoint_id
+INTERNAL_TO_DB_CP = {internal: db_id for db_id, internal in DB_TO_INTERNAL_CP.items()}
+
 
 async def get_checkpoint_wait_times(direction: str) -> dict:
     """Fetch average duration from checkpoint_status for the given direction."""
@@ -391,18 +394,24 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
         wait_times = await get_checkpoint_wait_times(direction)
         raw_handles = await get_checkpoint_telegram_handles()
         handles = {
-            DB_TO_INTERNAL_CP[db_id]: handle 
-            for db_id, handle in raw_handles.items() 
+            DB_TO_INTERNAL_CP[db_id]: handle
+            for db_id, handle in raw_handles.items()
             if db_id in DB_TO_INTERNAL_CP
         }
-        
+        closed_checkpoints = await get_closed_checkpoints()
+
         routes = []
+        closed_names = []
         is_outbound = (direction == "OUTBOUND")
         ua_city = origin_city if is_outbound else destination_city
         foreign_city = destination_city if is_outbound else origin_city
         cfg = COUNTRY_CONFIG.get(country_code, COUNTRY_CONFIG["PL"])
 
         for cp in cfg["checkpoints"]:
+            db_id = INTERNAL_TO_DB_CP.get(cp)
+            if db_id in closed_checkpoints:
+                closed_names.append(CHECKPOINT_EN_TO_UA.get(cp, cp))
+                continue
             dist_ua = DISTANCES_UA_TO_CP.get(ua_city, {}).get(cp, 0)
             dist_pl = DISTANCES_CP_TO_PL.get(cp, {}).get(foreign_city, 0)
             
@@ -431,7 +440,21 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
             f"Напрямок: {direction_str}",
             f"Маршрут: <b>{CITY_EN_TO_UA[origin_city]} ➡️ {CITY_EN_TO_UA[destination_city]}</b>\n"
         ]
-        
+
+        if closed_names:
+            lines.append(f"{CHECKPOINT_CLOSED_ICON} Закрито, не враховано в маршрутах: {', '.join(closed_names)}\n")
+
+        if not best_routes:
+            lines.append("😔 Усі пункти пропуску цього напрямку зараз закриті. Спробуйте інший напрямок або країну.")
+            await send_telegram_request("sendMessage", {
+                "chat_id": chat_id,
+                "text": "\n".join(lines),
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True,
+                "link_preview_options": {"is_disabled": True}
+            })
+            return
+
         for i, r in enumerate(best_routes, 1):
             cp_ua_name = CHECKPOINT_EN_TO_UA.get(r["checkpoint"], r["checkpoint"])
             handle = handles.get(r["checkpoint"])
