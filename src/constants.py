@@ -44,6 +44,8 @@ ERROR_DB_UPDATE = "⚠️ Помилка оновлення. Спробуйте 
 ERROR_DB_SAVE = "⚠️ Помилка збереження даних. Спробуйте ще раз."
 ERROR_DB_CANCEL = "⚠️ Помилка скасування. Спробуйте ще раз."
 ERROR_TOO_FREQUENT_CROSSING = "Ви надто часто перетинаєте кордон, відпочиньте з дороги 😊"
+CHECKPOINT_CLOSED_ICON = "🚫"
+CHECKPOINT_CLOSED_MESSAGE = "{icon} <b>{name}</b> наразі закрито.\n{reason}\n\nБудь ласка, оберіть інший пункт пропуску."
 PROMPT_CHOOSE_ACTION = "Оберіть дію:"
 INFO_PROMPT = (
     "📌 <b>Корисна інформація та спільнота</b>\n\n"

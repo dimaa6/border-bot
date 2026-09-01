@@ -105,6 +105,22 @@ async def adjust_border_crossing(crossing_id: str, adjust_minutes: int) -> bool:
     return True
 
 
+async def get_closed_checkpoints() -> dict:
+    """
+    Fetch checkpoints flagged as closed (e.g. destroyed/inaccessible) from checkpoint_scraper_config.
+    Returns a dict mapping checkpoint_id to closure_reason.
+    """
+    try:
+        result = await get_supabase().table("checkpoint_scraper_config") \
+            .select("checkpoint_id, closure_reason") \
+            .eq("is_closed", True) \
+            .execute()
+        return {row["checkpoint_id"]: row.get("closure_reason") for row in result.data or []}
+    except Exception:
+        logger.exception("Failed to fetch closed checkpoints")
+        return {}
+
+
 async def get_checkpoint_statuses(checkpoint_ids: list[str], direction: str, transport_type: str = "car") -> list[dict]:
     """
     Fetch checkpoint statuses from checkpoint_status table for given checkpoint_ids, direction, and transport_type.

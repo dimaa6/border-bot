@@ -45,11 +45,14 @@ CREATE TABLE checkpoint_scraper_config (
     last_scraped_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    config_matrix JSONB NOT NULL DEFAULT '{}'::jsonb
+    config_matrix JSONB NOT NULL DEFAULT '{}'::jsonb,
+    is_closed BOOLEAN NOT NULL DEFAULT FALSE,             -- User-facing flag: checkpoint destroyed/inaccessible, shown as closed to users
+    closure_reason TEXT                                   -- Why it's closed, shown to users (e.g. "Зруйновано внаслідок обстрілу")
 );
 
 -- Indexing for execution loops
 CREATE INDEX IF NOT EXISTS idx_active_checkpoints ON checkpoint_scraper_config (active);
+CREATE INDEX IF NOT EXISTS idx_closed_checkpoints ON checkpoint_scraper_config (is_closed);
 
 -- Create the consolidated status table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.checkpoint_status (
