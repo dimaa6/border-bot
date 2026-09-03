@@ -52,6 +52,10 @@ COUNTRIES_AND_CHECKPOINTS = {
             "MD_MAMALYHA":   "Мамалига",
             "MD_SOKYRIANY":  "Сокиряни",
             "MD_BRONNYTSIA": "Бронниця",
+            "MD_DOLYNSKE":     "Долинське",
+            "MD_STAROKOZACHE": "Старокозаче",
+            "MD_KELMENTSI":    "Кельменці",
+            "MD_TABAKY":       "Табаки",
         },
     },
 }
