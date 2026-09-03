@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
-from clients import get_supabase, send_telegram_request
-from constants import CMD_CANCEL, CMD_START_CROSSING, CHECKPOINT_CLOSED_ICON
+from clients import get_supabase, send_telegram_request, send_main_menu
+from constants import CMD_CANCEL, CMD_START_CROSSING, CHECKPOINT_CLOSED_ICON, PROMPT_CHOOSE_ACTION
 from db_helpers import get_checkpoint_telegram_handles, get_closed_checkpoints
 from redis_sessions import (
     increment_plan_route_country_analytics,
@@ -468,6 +468,7 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
                 "disable_web_page_preview": True,
                 "link_preview_options": {"is_disabled": True}
             })
+            await send_main_menu(chat_id, PROMPT_CHOOSE_ACTION)
             return
 
         for i, r in enumerate(best_routes, 1):
@@ -502,3 +503,4 @@ async def handle_plan_callback(chat_id: int, message_id: int, parts: list[str]):
             "disable_web_page_preview": True,
             "link_preview_options": {"is_disabled": True}
         })
+        await send_main_menu(chat_id, PROMPT_CHOOSE_ACTION)

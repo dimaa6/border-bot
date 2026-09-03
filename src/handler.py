@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timezone, timedelta
 
 from log_setup import configure_logging
-from clients import send_telegram_request, send_main_menu
+from clients import send_telegram_request, send_main_menu, send_cancel_only_keyboard
 from redis_sessions import (
     session_exists,
     get_session,
@@ -117,6 +117,7 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
                 return
         except Exception:
             logger.exception("Route: IDLE → start_crossing | DB check failed | chat_id=%s", chat_id)
+        await send_cancel_only_keyboard(chat_id, WIZARD_CANCEL_HINT)
         await send_country_selection(chat_id)
     elif text == "/addstats":
         logger.info("Route: IDLE → /addstats | chat_id=%s", chat_id)
@@ -133,6 +134,7 @@ async def handle_idle_input(chat_id: int, text: str) -> None:
         logger.info("Route: IDLE → plan route | chat_id=%s", chat_id)
         await increment_main_menu_analytics("plan_route")
         await increment_plan_route_funnel_analytics("step_0_started")
+        await send_cancel_only_keyboard(chat_id, WIZARD_CANCEL_HINT)
         await handle_plan_route_cmd(chat_id)
     elif text == CMD_INFO:
         logger.info("Route: IDLE → info | chat_id=%s", chat_id)

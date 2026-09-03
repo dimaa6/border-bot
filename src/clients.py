@@ -3,7 +3,7 @@ import os
 
 import httpx
 from supabase import acreate_client, AsyncClient
-from constants import CMD_START_CROSSING, CMD_PLAN_ROUTE, CMD_STATS, CMD_INFO
+from constants import CMD_START_CROSSING, CMD_PLAN_ROUTE, CMD_STATS, CMD_INFO, CMD_CANCEL
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,24 @@ async def send_main_menu(
                 [{"text": CMD_PLAN_ROUTE}],
                 [{"text": CMD_STATS}, {"text": CMD_INFO}],
             ],
+            "resize_keyboard": True,
+            "one_time_keyboard": False,
+            "is_persistent": True,
+        },
+    })
+
+
+async def send_cancel_only_keyboard(chat_id: int, text: str) -> None:
+    """
+    Replaces the bottom keyboard with a single Cancel button, used while a
+    multi-step wizard (crossing setup, route planning) is in progress.
+    """
+    logger.info("send_cancel_only_keyboard | chat_id=%s", chat_id)
+    await send_telegram_request("sendMessage", {
+        "chat_id": chat_id,
+        "text": text,
+        "reply_markup": {
+            "keyboard": [[{"text": CMD_CANCEL}]],
             "resize_keyboard": True,
             "one_time_keyboard": False,
             "is_persistent": True,
