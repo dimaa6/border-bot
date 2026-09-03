@@ -143,6 +143,13 @@ destinations_ua_md = [
     {"latitude": 46.3787, "longitude": 30.0854},  # Checkpoint Mayaky-Udobne
 ]
 
+destinations_ua_md2 = [
+    {"latitude": 45.5051, "longitude": 28.3341},  # Checkpoint Dolynske
+    {"latitude": 46.3718, "longitude": 29.9920},  # Checkpoint Starokozache
+    {"latitude": 48.4297, "longitude": 26.8349},  # Checkpoint Kelmentsi
+    {"latitude": 45.72467, "longitude": 28.5839}, # Checkpoint Tabaky
+]
+
 origins_md = [
     {"latitude": 48.4436, "longitude": 27.7844},  # MD_Mohyliv-Podilskyi
     {"latitude": 48.3980, "longitude": 27.8749},  # MD_Bronnytsya
@@ -152,12 +159,19 @@ origins_md = [
     {"latitude": 46.4118, "longitude": 30.1010},  # MD_Mayaky-Udobne
 ]
 
+origins_md2 = [
+    {"latitude": 45.5482, "longitude": 28.3428},  # MD_Dolynske
+    {"latitude": 46.3970, "longitude": 29.9727},  # MD_Starokozache
+    {"latitude": 48.3975, "longitude": 26.84925}, # MD_Kelmentsi
+    {"latitude": 45.7381, "longitude": 28.57947}, # MD_Tabaky
+]
+
 destinations_md = [
     {"latitude": 47.0351, "longitude": 28.84745}, # MD_Kishinev
 ]
 
-origins = origins_ua_hu
-destinations = [destinations_ua_hu[-1]]
+origins = origins_ua_md
+destinations = destinations_ua_md2
 
 def fetch_duration_matrix():
     url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"

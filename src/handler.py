@@ -346,13 +346,15 @@ async def handle_country_selected(chat_id: int, country_code: str, prefix: str =
         await increment_crossing_funnel_analytics("step_1_country_selected")
 
     closed_checkpoints = await get_closed_checkpoints()
-    buttons = [
-        [{
+    checkpoint_buttons = [
+        {
             "text": f"{CHECKPOINT_CLOSED_ICON} {name} (закрито)" if cp_id in closed_checkpoints else name,
             "callback_data": f"{prefix}:{country_code}:{cp_id}",
-        }]
+        }
         for cp_id, name in country["checkpoints"].items()
     ]
+    columns = 2 if len(checkpoint_buttons) >= 10 else 1
+    buttons = [checkpoint_buttons[i:i + columns] for i in range(0, len(checkpoint_buttons), columns)]
     cancel_callback = "cancel:checkpoint" if prefix == "checkpoint" else "cancel:flow"
     buttons.append([{"text": CMD_CANCEL, "callback_data": cancel_callback}])
     await send_telegram_request("sendMessage", {
