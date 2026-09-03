@@ -32,8 +32,15 @@ CREATE TABLE public.time_stat (
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
+-- Speeds up MAX()/ORDER BY on the effective timestamp (falls back to recorded_at
+-- when extracted_at is null), used by notify_if_data_stale() and
+-- refresh_checkpoint_statistics(). A plain index on either column alone can't
+-- satisfy a COALESCE expression.
+CREATE INDEX idx_time_stat_effective_time
+ON public.time_stat ((COALESCE(extracted_at, recorded_at)));
+
 -- create tale for scraper configuration
-CREATE TABLE checkpoint_scraper_config (
+CREATE TABLE public.checkpoint_scraper_config (
     checkpoint_id TEXT PRIMARY KEY,                       -- Your exact bot codes (e.g., 'PL_SHEHYNI', 'PL_USTYLUH')
     display_name TEXT NOT NULL,                           -- Friendly Ukrainian name for prompts (e.g., 'Шегині', 'Устилуг')
     foreign_name TEXT NOT NULL,                           -- Friendly Ukrainian name for other side (e.g., 'Медика')
@@ -51,8 +58,8 @@ CREATE TABLE checkpoint_scraper_config (
 );
 
 -- Indexing for execution loops
-CREATE INDEX IF NOT EXISTS idx_active_checkpoints ON checkpoint_scraper_config (active);
-CREATE INDEX IF NOT EXISTS idx_closed_checkpoints ON checkpoint_scraper_config (is_closed);
+CREATE INDEX IF NOT EXISTS idx_active_checkpoints ON public.checkpoint_scraper_config (active);
+CREATE INDEX IF NOT EXISTS idx_closed_checkpoints ON public.checkpoint_scraper_config (is_closed);
 
 -- Create the consolidated status table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.checkpoint_status (
@@ -72,7 +79,7 @@ CREATE TABLE IF NOT EXISTS public.checkpoint_status (
 CREATE TYPE movement_state_enum AS ENUM ('normal', 'slowdown', 'standstill', 'accelerated');
 
 -- Reports Main Table: directional_sentiment
-CREATE TABLE directional_sentiment (
+CREATE TABLE public.directional_sentiment (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     movement_state movement_state_enum NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -80,10 +87,10 @@ CREATE TABLE directional_sentiment (
     direction TEXT NOT NULL CHECK (direction IN ('INBOUND', 'OUTBOUND')),
     transport_type TEXT NOT NULL DEFAULT 'car' CHECK (transport_type IN ('car', 'bus', 'truck', 'van'))
 );
-CREATE INDEX idx_directional_sentiment_created_at ON directional_sentiment(created_at);
+CREATE INDEX idx_directional_sentiment_created_at ON public.directional_sentiment(created_at);
 
 -- Reports Child Table 1
-CREATE TABLE time_report (
+CREATE TABLE public.time_report (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     directional_sentiment_id UUID NOT NULL,
     reported_time_minutes INTEGER NOT NULL,
@@ -91,15 +98,22 @@ CREATE TABLE time_report (
     reported_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- Foreign key linking back to the main table
-    CONSTRAINT fk_time_report_sentiment 
-        FOREIGN KEY (directional_sentiment_id) 
-        REFERENCES directional_sentiment (id)
+    CONSTRAINT fk_time_report_sentiment
+        FOREIGN KEY (directional_sentiment_id)
+        REFERENCES public.directional_sentiment (id)
         ON DELETE CASCADE
 );
-CREATE INDEX idx_time_report_sentiment_id ON time_report(directional_sentiment_id);
+CREATE INDEX idx_time_report_sentiment_id ON public.time_report(directional_sentiment_id);
+
+-- Tracks when each alert was last sent, so scheduled checks can throttle
+-- notifications (e.g. at most once per day) instead of firing every run.
+CREATE TABLE IF NOT EXISTS public.alert_notifications (
+    alert_key TEXT PRIMARY KEY,
+    last_notified_at TIMESTAMPTZ NOT NULL
+);
 
 -- Reports Child Table 2
-CREATE TABLE queue_report (
+CREATE TABLE public.queue_report (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     directional_sentiment_id UUID NOT NULL,
     reported_queue_length INTEGER, -- Nullable since it can be None/null
@@ -110,9 +124,9 @@ CREATE TABLE queue_report (
     reported_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- Foreign key linking back to the main table
-    CONSTRAINT fk_queue_report_sentiment 
-        FOREIGN KEY (directional_sentiment_id) 
-        REFERENCES directional_sentiment (id)
+    CONSTRAINT fk_queue_report_sentiment
+        FOREIGN KEY (directional_sentiment_id)
+        REFERENCES public.directional_sentiment (id)
         ON DELETE CASCADE
 );
-CREATE INDEX idx_queue_report_sentiment_id ON queue_report(directional_sentiment_id);
+CREATE INDEX idx_queue_report_sentiment_id ON public.queue_report(directional_sentiment_id);
