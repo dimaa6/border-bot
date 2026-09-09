@@ -791,6 +791,8 @@ async def handle_stats_direction_selected(
         data_source = row.get("data_source", "UNKNOWN")
         if data_source == "ACTUAL":
             ds_text = f"(на основі {row.get('reports_count', 0)} реальних звітів)"
+        elif data_source == "NAKORDONI":
+            ds_text = "(за даними <a href='https://nakordoni.eu/uk'>nakordoni.eu</a>)"
         else:
             ds_text = "(на основі аналізу публічних даних)"
 

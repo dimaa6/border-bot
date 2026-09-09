@@ -37,7 +37,10 @@ BEGIN
             duration_minutes AS avg_time,
             1 AS r_count,
             1 AS sorting_priority,
-            'PREDICTION'::TEXT AS data_source,
+            CASE
+                WHEN metadata->>'prediction_source' = 'NAKORDONI' THEN 'NAKORDONI'
+                ELSE 'PREDICTION'
+            END::TEXT AS data_source,
             (metadata->'llm'->>'is_jammed')::BOOLEAN AS is_jammed,
             (metadata->'llm'->>'is_warning')::BOOLEAN AS is_warning,
             COALESCE(extracted_at, recorded_at) AS source_updated_at
