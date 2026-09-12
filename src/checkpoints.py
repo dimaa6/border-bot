@@ -56,6 +56,10 @@ COUNTRIES_AND_CHECKPOINTS = {
             "MD_STAROKOZACHE": "Старокозаче",
             "MD_KELMENTSI":    "Кельменці",
             "MD_TABAKY":       "Табаки",
+            "MD_SERPNEVE1":    "Серпневе 1",
+            "MD_LISNE":        "Лісне",
+            "MD_VYNOHRADIVKA": "Виноградівка",
+            "MD_NOVI_TROIANY": "Нові Трояни",
         },
     },
 }

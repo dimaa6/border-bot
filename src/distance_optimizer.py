@@ -34,7 +34,7 @@ CHECKPOINTS_RO = ["Orlivka", "Dyakivtsi", "Dyakove", "Krasnoilsk", "Porubne", "S
 
 UKRAINIAN_CITIES_MD = ["Vinnytsia", "Uman", "Odesa"]
 MOLDOVAN_CITIES = ["Chisinau"]
-CHECKPOINTS_MD = ["Mohyliv-Podilskyi", "Bronnytsya", "Rososhany", "Mamalyha", "Sokyryany", "Mayaky-Udobne", "Dolynske", "Starokozache", "Kelmentsi", "Tabaky"]
+CHECKPOINTS_MD = ["Mohyliv-Podilskyi", "Bronnytsya", "Rososhany", "Mamalyha", "Sokyryany", "Mayaky-Udobne", "Dolynske", "Starokozache", "Kelmentsi", "Tabaky", "Serpneve", "Lisne", "Vynohradivka", "Novi Troiany"]
 
 COUNTRY_CONFIG = {
     "PL": {
@@ -131,6 +131,10 @@ CHECKPOINT_EN_TO_UA = {
     "Starokozache": "Старокозаче",
     "Kelmentsi": "Кельменці",
     "Tabaky": "Табаки",
+    "Serpneve": "Серпневе 1",
+    "Lisne": "Лісне",
+    "Vynohradivka": "Виноградівка",
+    "Novi Troiany": "Нові Трояни",
 }
 
 # Nested dictionary mapping: Ukrainian City -> Checkpoint -> Drive time (minutes)
@@ -167,15 +171,18 @@ DISTANCES_UA_TO_CP = {
     "Odesa": {
         "Orlivka": 207, "Dyakivtsi": 547, "Dyakove": 810, "Krasnoilsk": 603, "Porubne": 564, "Solotvyno": 766, "Reni": 230,
         "Mohyliv-Podilskyi": 381, "Bronnytsya": 378, "Rososhany": 475, "Mamalyha": 528, "Sokyryany": 436, "Mayaky-Udobne": 46,
-        "Dolynske": 233, "Starokozache": 53, "Kelmentsi": 472, "Tabaky": 184
+        "Dolynske": 233, "Starokozache": 53, "Kelmentsi": 472, "Tabaky": 184,
+        "Serpneve": 160, "Lisne": 118, "Vynohradivka": 184, "Novi Troiany": 203
     },
     "Vinnytsia": {
         "Mohyliv-Podilskyi": 94, "Bronnytsya": 106, "Rososhany": 190, "Mamalyha": 244, "Sokyryany": 152, "Mayaky-Udobne": 343,
-        "Dolynske": 438, "Starokozache": 345, "Kelmentsi": 192, "Tabaky": 410
+        "Dolynske": 438, "Starokozache": 345, "Kelmentsi": 192, "Tabaky": 410,
+        "Serpneve": 364, "Lisne": 357, "Vynohradivka": 414, "Novi Troiany": 401
     },
     "Uman": {
         "Mohyliv-Podilskyi": 223, "Bronnytsya": 229, "Rososhany": 310, "Mamalyha": 363, "Sokyryany": 271, "Mayaky-Udobne": 190,
-        "Dolynske": 395, "Starokozache": 215, "Kelmentsi": 311, "Tabaky": 346
+        "Dolynske": 395, "Starokozache": 215, "Kelmentsi": 311, "Tabaky": 346,
+        "Serpneve": 318, "Lisne": 277, "Vynohradivka": 342, "Novi Troiany": 361
     },
 }
 
@@ -219,6 +226,10 @@ DISTANCES_CP_TO_PL = {
     "Starokozache": {"Chisinau": 118},
     "Kelmentsi": {"Chisinau": 202},
     "Tabaky": {"Chisinau": 147},
+    "Serpneve": {"Chisinau": 93},
+    "Lisne": {"Chisinau": 100},
+    "Vynohradivka": {"Chisinau": 151},
+    "Novi Troiany": {"Chisinau": 137},
 }
 
 def format_minutes_to_str(minutes: int) -> str:
@@ -262,6 +273,10 @@ DB_TO_INTERNAL_CP = {
     "MD_STAROKOZACHE": "Starokozache",
     "MD_KELMENTSI": "Kelmentsi",
     "MD_TABAKY": "Tabaky",
+    "MD_SERPNEVE1": "Serpneve",
+    "MD_LISNE": "Lisne",
+    "MD_VYNOHRADIVKA": "Vynohradivka",
+    "MD_NOVI_TROIANY": "Novi Troiany",
 }
 
 # Reverse mapping: internal CHECKPOINTS name -> DB checkpoint_id
